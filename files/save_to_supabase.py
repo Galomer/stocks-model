@@ -62,7 +62,12 @@ def upsert_via_rest(rows: list, supabase_url: str, service_key: str) -> int:
     Uses `Prefer: resolution=merge-duplicates` which respects the UNIQUE constraint
     on (run_date, sector). More reliable than supabase-py 2.30's upsert wrapper.
     """
+    # Defensively strip common suffixes the user might have pasted by mistake
     base = supabase_url.rstrip("/")
+    for suffix in ("/rest/v1", "/rest", "/auth/v1", "/auth"):
+        if base.endswith(suffix):
+            base = base[: -len(suffix)]
+            break
 
     # URL sanity check (without leaking the full value)
     print(f"  [diag] base URL length: {len(base)}, scheme/host check: starts={base[:8]}, host_tail={base[-25:]}")
