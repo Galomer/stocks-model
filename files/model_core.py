@@ -93,11 +93,29 @@ def raw_composite_from_features(
 
 
 def apply_calibration(raw_composite: float, calibration: Optional[dict] = None) -> float:
-    """Affine calibration learned on historical excess returns."""
+    """Center and rescale raw composite to a readable [-100, 100] score."""
     cal = calibration or CALIBRATION
+
+    # Display calibration (version 2+): z-score then scale.
+    if cal.get("target_std") is not None:
+        raw_mean = float(cal.get("raw_mean", 0.0))
+        raw_std = float(cal.get("raw_std", 1.0))
+        target_std = float(cal.get("target_std", 30.0))
+        if raw_std < 1e-6:
+            return float(np.clip(raw_composite - raw_mean, -100.0, 100.0))
+        z = (raw_composite - raw_mean) / raw_std
+        return float(np.clip(z * target_std, -100.0, 100.0))
+
+    # Legacy misfit: slope/intercept were regressing excess *returns* (~0.01 scale)
+    # onto raw scores (~±30). That mapped every sector to ~0. Ignore and use raw.
     slope = float(cal.get("slope", 1.0))
+    if abs(slope) < 0.05:
+        return float(np.clip(raw_composite, -100.0, 100.0))
+
+    # Older affine format (score space) — kept for compatibility.
+    raw_mean = float(cal.get("raw_mean", 0.0))
     intercept = float(cal.get("intercept", 0.0))
-    centered = raw_composite - float(cal.get("raw_mean", 0.0))
+    centered = raw_composite - raw_mean
     out = slope * centered + intercept
     return float(np.clip(out, -100.0, 100.0))
 

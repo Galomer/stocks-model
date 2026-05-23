@@ -220,22 +220,17 @@ def simulate_rows(
 
 
 def fit_calibration(raw_scores: List[float], targets: List[float]) -> dict:
-    """OLS: target = slope * (raw - mean(raw)) + intercept."""
+    """Center/spread raw composites for display on [-100, 100] (rank-preserving)."""
+    del targets  # correlation validated separately; not used for display scale
     if len(raw_scores) < 30:
-        return {"slope": 1.0, "intercept": 0.0, "raw_mean": 0.0}
+        return {"raw_mean": 0.0, "raw_std": 1.0, "target_std": 30.0}
     raw_mean = sum(raw_scores) / len(raw_scores)
-    xs = [x - raw_mean for x in raw_scores]
-    ys = targets
-    mx = sum(xs) / len(xs)
-    my = sum(ys) / len(ys)
-    num = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
-    den = sum((x - mx) ** 2 for x in xs)
-    slope = num / den if den else 1.0
-    intercept = my - slope * mx
+    variance = sum((x - raw_mean) ** 2 for x in raw_scores) / len(raw_scores)
+    raw_std = max(variance ** 0.5, 1e-6)
     return {
-        "slope": round(float(slope), 6),
-        "intercept": round(float(intercept), 6),
         "raw_mean": round(float(raw_mean), 4),
+        "raw_std": round(float(raw_std), 4),
+        "target_std": 30.0,
     }
 
 
@@ -314,7 +309,11 @@ def main():
     print("\n  Stage 2 — composite calibration on simulated scores")
     raw_scores, _, targets = simulate_rows(rows, weights, signs)
     calibration = fit_calibration(raw_scores, targets)
-    print(f"    raw_mean={calibration['raw_mean']:+.2f}  slope={calibration['slope']:+.4f}  intercept={calibration['intercept']:+.4f}")
+    print(
+        f"    raw_mean={calibration['raw_mean']:+.2f}  "
+        f"raw_std={calibration['raw_std']:.2f}  "
+        f"target_std={calibration['target_std']:.1f}"
+    )
 
     # ── Stage 3: greedy sign refinement at composite level ──────────────────
     print("\n  Stage 3 — composite-level sign refinement")
