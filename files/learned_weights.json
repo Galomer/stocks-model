@@ -1,0 +1,123 @@
+{
+  "horizon": "fwd_return_3m",
+  "weights": {
+    "commodity_change_3m": 0.1317,
+    "cyclical_vs_defensive": 0.334,
+    "hy_spread_chg_1m": 0.0899,
+    "hy_spread_level": 0.2833,
+    "ig_spread_level": 0.2337,
+    "price_vs_200dma": 0.2187,
+    "price_vs_50dma": 0.1644,
+    "real_yield_level": 0.0,
+    "relative_strength_3m": 0.1312,
+    "roc_1m": 0.1069,
+    "roc_3m": 0.2451,
+    "roc_6m": 0.1881,
+    "rsi": 0.122,
+    "sector_vs_market_corr": 0.2608,
+    "usd_change_3m": 0.1497,
+    "vix_level": 0.1147,
+    "vix_term_structure": 0.1634,
+    "yield_curve_chg_1m": 0.05,
+    "yield_curve_slope": 0.1608
+  },
+  "signs": {
+    "commodity_change_3m": -1,
+    "cyclical_vs_defensive": -1,
+    "hy_spread_chg_1m": -1,
+    "hy_spread_level": -1,
+    "ig_spread_level": -1,
+    "price_vs_200dma": -1,
+    "price_vs_50dma": -1,
+    "real_yield_level": -1,
+    "relative_strength_3m": -1,
+    "roc_1m": -1,
+    "roc_3m": -1,
+    "roc_6m": -1,
+    "rsi": -1,
+    "sector_vs_market_corr": 1,
+    "usd_change_3m": 1,
+    "vix_level": -1,
+    "vix_term_structure": -1,
+    "yield_curve_chg_1m": 1,
+    "yield_curve_slope": 1
+  },
+  "stats": {
+    "commodity_change_3m": {
+      "corr": -0.1317,
+      "n": 417
+    },
+    "cyclical_vs_defensive": {
+      "corr": -0.334,
+      "n": 1529
+    },
+    "hy_spread_chg_1m": {
+      "corr": -0.0899,
+      "n": 1221
+    },
+    "hy_spread_level": {
+      "corr": -0.2833,
+      "n": 1265
+    },
+    "ig_spread_level": {
+      "corr": -0.2337,
+      "n": 1265
+    },
+    "price_vs_200dma": {
+      "corr": -0.2187,
+      "n": 1529
+    },
+    "price_vs_50dma": {
+      "corr": -0.1644,
+      "n": 1529
+    },
+    "real_yield_level": {
+      "corr": -0.0069,
+      "n": 1529
+    },
+    "relative_strength_3m": {
+      "corr": -0.1312,
+      "n": 1529
+    },
+    "roc_1m": {
+      "corr": -0.1069,
+      "n": 1529
+    },
+    "roc_3m": {
+      "corr": -0.2451,
+      "n": 1529
+    },
+    "roc_6m": {
+      "corr": -0.1881,
+      "n": 1529
+    },
+    "rsi": {
+      "corr": -0.122,
+      "n": 1529
+    },
+    "sector_vs_market_corr": {
+      "corr": 0.2608,
+      "n": 1529
+    },
+    "usd_change_3m": {
+      "corr": 0.1497,
+      "n": 1529
+    },
+    "vix_level": {
+      "corr": -0.1147,
+      "n": 1529
+    },
+    "vix_term_structure": {
+      "corr": -0.1634,
+      "n": 1529
+    },
+    "yield_curve_chg_1m": {
+      "corr": 0.0241,
+      "n": 1529
+    },
+    "yield_curve_slope": {
+      "corr": 0.1608,
+      "n": 1529
+    }
+  }
+}
