@@ -159,9 +159,9 @@ def main():
     print()
     print(f"  {'feature':<28s} "
           f"{'n':>5s}  "
-          f"{'h1':>+7s} "
-          f"{'h2':>+7s} "
-          f"{'full':>+7s}  "
+          f"{'h1':>7s} "
+          f"{'h2':>7s} "
+          f"{'full':>7s}  "
           f"{'sign':>4s}  "
           f"{'wgt':>6s}  "
           f"verdict")
