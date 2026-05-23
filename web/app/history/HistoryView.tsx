@@ -344,9 +344,9 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
       <div className="rounded-lg bg-amber-500/5 border border-amber-500/10 p-4 flex gap-3 text-sm text-amber-400/80">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
         <p>
-          Important caveats: 3 years is a relatively short window — the result you see partly reflects
-          this particular market period. Historical performance does not predict future performance.
-          This is research, not investment advice.
+          Important caveats: this sample runs from 2019 through today and includes several very
+          different market regimes, but it is still one historical window. Past performance does not
+          predict future performance. This is research, not investment advice.
         </p>
       </div>
     </div>
