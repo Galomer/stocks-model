@@ -55,58 +55,68 @@ def fetch_prices(tickers: List[str], days_back: int = LOOKBACK_DAYS) -> pd.DataF
 
 # ── Macro (FRED) ──────────────────────────────────────────────────────────
 
-def _fetch_fred_csv(sid: str, start: str, attempts: int = 3, timeout: int = 45) -> Optional[pd.Series]:
+_FRED_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+    ),
+    "Accept": "text/csv,*/*",
+}
+
+
+def _fetch_fred_csv(sid: str, start: str, timeout: int = 25) -> Optional[pd.Series]:
     """
-    Fetch a single FRED series from the public CSV endpoint with retries.
-    Returns a pandas Series indexed by date, or None on failure.
+    Fetch a single FRED series from the public CSV endpoint.
+    Tries two known URL shapes and returns a pandas Series, or None on failure.
     """
     from io import StringIO
-    import time
 
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-        ),
-        "Accept": "text/csv,*/*",
-    }
     urls = [
         f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}&cosd={start}",
         f"https://fred.stlouisfed.org/series/{sid}/downloaddata/{sid}.csv",
     ]
-
-    for attempt in range(attempts):
-        for url in urls:
-            try:
-                resp = requests.get(url, timeout=timeout, headers=headers)
-                resp.raise_for_status()
-                df_s = pd.read_csv(StringIO(resp.text), parse_dates=[0], index_col=0)
-                df_s.columns = [sid]
-                df_s = df_s.replace(".", float("nan"))
-                df_s[sid] = pd.to_numeric(df_s[sid], errors="coerce")
-                return df_s[sid]
-            except Exception as e:
-                last_err = e
-                continue
-        time.sleep(2 * (attempt + 1))
-
-    print(f"  [warn] FRED series {sid} unavailable after {attempts} attempts: {last_err}")
+    for url in urls:
+        try:
+            resp = requests.get(url, timeout=timeout, headers=_FRED_HEADERS)
+            resp.raise_for_status()
+            df_s = pd.read_csv(StringIO(resp.text), parse_dates=[0], index_col=0)
+            df_s.columns = [sid]
+            df_s = df_s.replace(".", float("nan"))
+            df_s[sid] = pd.to_numeric(df_s[sid], errors="coerce")
+            return df_s[sid]
+        except Exception:
+            continue
     return None
 
 
-def fetch_fred(days_back: int = LOOKBACK_DAYS) -> pd.DataFrame:
+def fetch_fred(days_back: int = LOOKBACK_DAYS, total_budget_sec: int = 90) -> pd.DataFrame:
     """
-    Download macro series directly from the FRED CSV endpoint with retries.
-    No API key required. Failed series are silently dropped so the model still
-    runs with reduced coverage.
+    Download all FRED macro series in parallel with a hard total-time budget.
+    Returns whatever series finished within the budget; missing series degrade
+    gracefully (the model excludes them and redistributes weight).
     """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     start = _start_date(days_back)
+    series_ids = list(FRED_SERIES.keys())
     results = {}
 
-    for sid in FRED_SERIES:
-        s = _fetch_fred_csv(sid, start)
-        if s is not None:
-            results[sid] = s
+    with ThreadPoolExecutor(max_workers=len(series_ids)) as ex:
+        future_to_sid = {ex.submit(_fetch_fred_csv, sid, start): sid for sid in series_ids}
+        try:
+            for future in as_completed(future_to_sid, timeout=total_budget_sec):
+                sid = future_to_sid[future]
+                try:
+                    s = future.result()
+                    if s is not None:
+                        results[sid] = s
+                    else:
+                        print(f"  [warn] FRED series {sid} returned no data")
+                except Exception as e:
+                    print(f"  [warn] FRED series {sid} failed: {e}")
+        except TimeoutError:
+            missing = [sid for sid in series_ids if sid not in results]
+            print(f"  [warn] FRED budget of {total_budget_sec}s exceeded; missing: {missing}")
 
     if not results:
         return pd.DataFrame()
