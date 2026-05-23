@@ -48,7 +48,17 @@ def score_at(prices_slice: pd.DataFrame, fred_slice: pd.DataFrame, sector: str) 
     # No historical fear_greed — pass None
     features.update(build_sentiment_features(prices_slice, fear_greed_score=None))
     features.update(build_regime_features(prices_slice, sector))
-    return compute_composite(features, FEATURE_WEIGHTS)
+    result = compute_composite(features, FEATURE_WEIGHTS)
+    result["raw_features"] = features
+    return result
+
+
+def features_to_jsonb(raw: dict) -> dict:
+    """Convert raw per-feature signed scores (in [-1, 1]) to a JSONB-safe dict."""
+    out = {}
+    for name, val in raw.items():
+        out[name] = nan_to_none(val)
+    return out
 
 
 def forward_returns(full_prices: pd.DataFrame, sector: str, as_of: pd.Timestamp) -> dict:
@@ -165,6 +175,7 @@ def main():
                 "fwd_return_3m":  fwd["fwd_return_3m"],
                 "fwd_return_6m":  fwd["fwd_return_6m"],
                 "fwd_return_1y":  fwd["fwd_return_1y"],
+                "features":       features_to_jsonb(r["raw_features"]),
             })
 
         if (i + 1) % 50 == 0 or i == len(sample_dates) - 1:
