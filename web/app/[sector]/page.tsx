@@ -3,9 +3,13 @@ import { directionLabel, directionBg, directionColor, SECTOR_DESCRIPTIONS } from
 import ScoreBar from '@/components/ScoreBar'
 import CategoryBreakdown from '@/components/CategoryBreakdown'
 import FeatureTable from '@/components/FeatureTable'
+import InfoTip from '@/components/InfoTip'
+import SectorHoldings from '@/components/SectorHoldings'
+import { COMPOSITE_INFO, COVERAGE_INFO } from '@/lib/descriptions'
+import { SECTOR_HOLDINGS } from '@/lib/sectorHoldings'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, TrendingUp } from 'lucide-react'
+import { ArrowLeft, Calendar, TrendingUp, Briefcase } from 'lucide-react'
 
 export const revalidate = 3600
 
@@ -88,7 +92,10 @@ export default async function SectorPage({ params }: Props) {
       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-6 space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Composite Score</p>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 inline-flex items-center gap-1.5">
+              Composite Score
+              <InfoTip what={COMPOSITE_INFO.what} why={COMPOSITE_INFO.why} align="start" />
+            </p>
             <p className={`text-5xl font-bold tabular-nums ${directionColor(score.composite)}`}>
               {score.composite !== null
                 ? `${score.composite > 0 ? '+' : ''}${score.composite.toFixed(1)}`
@@ -96,8 +103,18 @@ export default async function SectorPage({ params }: Props) {
             </p>
           </div>
           <div className="text-right text-xs text-zinc-600 space-y-0.5">
-            <p>{score.available} features used</p>
-            <p>{((score.coverage ?? 0) * 100).toFixed(0)}% coverage</p>
+            <p className="inline-flex items-center gap-1.5 justify-end">
+              {score.available} features used
+              <InfoTip
+                what="The number of input signals (out of 19) that had usable data when this score was computed."
+                why="Some metrics depend on external feeds (FRED, sentiment APIs). A lower count means a few signals were temporarily unavailable."
+                align="end"
+              />
+            </p>
+            <p className="inline-flex items-center gap-1.5 justify-end">
+              {((score.coverage ?? 0) * 100).toFixed(0)}% coverage
+              <InfoTip what={COVERAGE_INFO.what} why={COVERAGE_INFO.why} align="end" />
+            </p>
           </div>
         </div>
         <ScoreBar score={score.composite} size="lg" />
@@ -110,7 +127,14 @@ export default async function SectorPage({ params }: Props) {
 
       {/* Category breakdown */}
       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-zinc-300">Category Breakdown</h2>
+        <h2 className="text-sm font-semibold text-zinc-300 inline-flex items-center gap-1.5">
+          Category Breakdown
+          <InfoTip
+            what="Each category groups related signals: Momentum (price trends), Macro & Rates (interest rates and credit), Sentiment (fear/greed), and Regime (risk-on vs risk-off)."
+            why="Looking at the categories separately helps explain why the headline score is what it is — e.g., a bullish Momentum offset by a bearish Macro."
+            align="start"
+          />
+        </h2>
         <CategoryBreakdown score={score} />
       </div>
 
@@ -127,8 +151,41 @@ export default async function SectorPage({ params }: Props) {
       {/* Per-feature breakdown */}
       {score.features && (
         <div className="rounded-xl border border-white/5 bg-white/[0.02] p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-zinc-300">Per-Feature Breakdown</h2>
+          <h2 className="text-sm font-semibold text-zinc-300 inline-flex items-center gap-1.5">
+            Per-Feature Breakdown
+            <InfoTip
+              what="Every individual signal that feeds the composite, grouped by category. Each row shows the signal's normalized score (-100 to +100) and the weight it carries."
+              why="Useful for diagnosing why a sector got the score it did and which signals are doing the heavy lifting on any given day."
+              align="start"
+            />
+          </h2>
           <FeatureTable score={score} />
+        </div>
+      )}
+
+      {/* Top 20 holdings */}
+      {SECTOR_HOLDINGS[sector] && (
+        <div className="rounded-xl border border-white/5 bg-white/[0.02] p-6 space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="text-sm font-semibold text-zinc-300 inline-flex items-center gap-1.5">
+              <Briefcase className="w-4 h-4 text-zinc-500" />
+              Top 20 Holdings
+              <InfoTip
+                what={`The 20 largest companies inside the ${sector} ETF by index weight.`}
+                why="The score is for the sector as a whole, but the ETF is essentially these 20 names plus a long tail. They drive most of the day-to-day moves."
+                align="start"
+              />
+            </h2>
+            <span className="text-xs text-zinc-600">
+              Ordered by approximate index weight
+            </span>
+          </div>
+          <SectorHoldings sector={sector} />
+          <p className="text-xs text-zinc-600 pt-2 border-t border-white/5">
+            Holdings are illustrative and based on the SPDR sector ETF&rsquo;s most recent
+            published top constituents. Exact weights shift week to week as prices and
+            shares outstanding change.
+          </p>
         </div>
       )}
     </div>

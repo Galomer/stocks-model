@@ -2,6 +2,8 @@
 
 import { CATEGORY_ORDER, CATEGORY_LABELS, type SectorScore, type CategoryKey } from '@/lib/types'
 import ScoreBar from './ScoreBar'
+import InfoTip from './InfoTip'
+import { FEATURE_INFO, CATEGORY_INFO } from '@/lib/descriptions'
 
 interface FeatureTableProps {
   score: SectorScore
@@ -41,22 +43,27 @@ export default function FeatureTable({ score }: FeatureTableProps) {
         )
         if (!features.length) return null
 
+        const catInfo = CATEGORY_INFO[cat]
+
         return (
           <div key={cat}>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3 inline-flex items-center gap-1.5">
               {CATEGORY_LABELS[cat as CategoryKey]}
+              {catInfo && <InfoTip what={catInfo.what} why={catInfo.why} align="start" />}
             </h3>
             <div className="space-y-2">
               {features.map(([name, detail]) => {
                 const scaled = detail.score !== null ? detail.score * 100 : null
                 const isNull = scaled === null || isNaN(scaled)
+                const info = FEATURE_INFO[name]
                 return (
                   <div
                     key={name}
                     className="grid grid-cols-[1fr_140px_52px_44px] items-center gap-3 text-sm"
                   >
-                    <span className="text-gray-300 truncate">
-                      {FEATURE_LABELS[name] ?? name}
+                    <span className="text-gray-300 truncate inline-flex items-center gap-1.5 min-w-0">
+                      <span className="truncate">{FEATURE_LABELS[name] ?? name}</span>
+                      {info && <InfoTip what={info.what} why={info.why} align="start" />}
                     </span>
                     <ScoreBar score={scaled} size="sm" />
                     <span className="tabular-nums text-right text-gray-400">

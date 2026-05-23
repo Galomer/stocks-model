@@ -1,6 +1,8 @@
 import { getAllSectorScores, getLatestRunDate } from '@/lib/supabase'
 import { directionLabel, directionBg, directionColor, CATEGORY_ORDER, CATEGORY_LABELS } from '@/lib/types'
 import ScoreBar from '@/components/ScoreBar'
+import InfoTip from '@/components/InfoTip'
+import { CATEGORY_INFO, COMPOSITE_INFO } from '@/lib/descriptions'
 import { TrendingUp, Calendar, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -52,8 +54,18 @@ export default async function HomePage() {
               <span className="w-6">#</span>
               <span>Sector</span>
               <span className="hidden sm:block">Score</span>
-              <span className="text-right">Composite</span>
-              <span className="text-right">Signal</span>
+              <span className="text-right inline-flex items-center justify-end gap-1.5">
+                Composite
+                <InfoTip what={COMPOSITE_INFO.what} why={COMPOSITE_INFO.why} align="end" />
+              </span>
+              <span className="text-right inline-flex items-center justify-end gap-1.5">
+                Signal
+                <InfoTip
+                  what="A plain-English label based on the composite score: Strongly Bearish, Bearish, Neutral, Bullish, or Strongly Bullish."
+                  why="Quickly tells you the model's directional view without having to interpret the raw number."
+                  align="end"
+                />
+              </span>
             </div>
 
             {scores.map((s, i) => (
@@ -108,10 +120,12 @@ export default async function HomePage() {
                   sentiment: 'Is the market calm and confident?',
                   regime:    'Are investors in risk-on mode?',
                 }
+                const info = CATEGORY_INFO[cat]
                 return (
                   <div key={cat} className="rounded-lg border border-white/5 bg-white/[0.02] p-4 space-y-2">
-                    <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
+                    <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider inline-flex items-center gap-1.5">
                       {CATEGORY_LABELS[cat]}
+                      {info && <InfoTip what={info.what} why={info.why} align="start" />}
                     </div>
                     <div className={`text-2xl font-bold tabular-nums ${directionColor(avg)}`}>
                       {avg !== null ? `${avg > 0 ? '+' : ''}${avg.toFixed(1)}` : 'n/a'}

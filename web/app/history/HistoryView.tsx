@@ -5,6 +5,7 @@ import type { HistoricalScore, Horizon } from '@/lib/types'
 import { HORIZON_LABELS } from '@/lib/types'
 import { pairsForHorizon, bucketize, pearson, correlationBySector } from '@/lib/analysis'
 import ScatterPlot from '@/components/ScatterPlot'
+import InfoTip from '@/components/InfoTip'
 import { TrendingUp, AlertTriangle, BarChart3, HelpCircle } from 'lucide-react'
 
 const HORIZONS: Horizon[] = ['fwd_return_1m', 'fwd_return_3m', 'fwd_return_6m', 'fwd_return_1y']
@@ -89,7 +90,14 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
 
       {/* Horizon tabs */}
       <div>
-        <p className="text-xs text-zinc-500 mb-2">Look ahead by:</p>
+        <p className="text-xs text-zinc-500 mb-2 inline-flex items-center gap-1.5">
+          Look ahead by
+          <InfoTip
+            what="Choose how far into the future you want to compare. We measure the sector's actual price change over that period after each score."
+            why="Some signals work over weeks, others over months. The model's edge is strongest at the 3 and 6-month horizons."
+            align="start"
+          />:
+        </p>
         <div className="flex gap-1 p-1 rounded-lg border border-white/5 bg-white/[0.02] w-fit">
           {HORIZONS.map((h) => (
             <button
@@ -124,12 +132,20 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
           value={bullishAvg !== null ? `${bullishAvg >= 0 ? '+' : ''}${(bullishAvg * 100).toFixed(2)}%` : 'n/a'}
           hint={`Average price change over the next ${HORIZON_LABELS[horizon].toLowerCase()}`}
           color={bullishAvg !== null && bullishAvg > 0 ? 'green' : 'red'}
+          info={{
+            what: 'The simple average price change for every (sector, day) where the model gave a Bullish or Strongly Bullish score (+25 to +100).',
+            why:  'If the model works, this number should be meaningfully positive — and ideally larger than the bearish-case number below.',
+          }}
         />
         <PlainStat
           label="When the score said BEARISH (−25 or lower)"
           value={bearishAvg !== null ? `${bearishAvg >= 0 ? '+' : ''}${(bearishAvg * 100).toFixed(2)}%` : 'n/a'}
           hint={`Average price change over the next ${HORIZON_LABELS[horizon].toLowerCase()}`}
           color={bearishAvg !== null && bearishAvg > 0 ? 'green' : 'red'}
+          info={{
+            what: 'The simple average price change for every (sector, day) where the model gave a Bearish or Strongly Bearish score (−25 to −100).',
+            why:  'If the model works, this number should be lower than the bullish-case number — ideally negative or near zero.',
+          }}
         />
       </div>
 
@@ -149,11 +165,56 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
           <table className="w-full text-sm">
             <thead className="bg-white/[0.02] text-xs text-zinc-500 uppercase tracking-wider">
               <tr>
-                <th className="text-left  font-medium px-5 py-3">When the score said…</th>
-                <th className="text-right font-medium px-5 py-3">Times this happened</th>
-                <th className="text-right font-medium px-5 py-3">Average price change</th>
-                <th className="text-right font-medium px-5 py-3">Typical price change</th>
-                <th className="text-right font-medium px-5 py-3">% of time price went up</th>
+                <th className="text-left  font-medium px-5 py-3">
+                  <span className="inline-flex items-center gap-1.5">
+                    When the score said…
+                    <InfoTip
+                      what="The five score bands the model produces, from very bearish (−100 to −60) to very bullish (+60 to +100)."
+                      why="Grouping individual scores into bands lets us see how outcomes differ between strongly bullish, mildly bullish, neutral, and bearish reads."
+                      align="start"
+                    />
+                  </span>
+                </th>
+                <th className="text-right font-medium px-5 py-3">
+                  <span className="inline-flex items-center gap-1.5 justify-end">
+                    Times this happened
+                    <InfoTip
+                      what="How many (sector, day) observations fell into this score band over the 3-year backtest."
+                      why="Bands with very few observations are noisy. Trust patterns more when the count is large."
+                      align="end"
+                    />
+                  </span>
+                </th>
+                <th className="text-right font-medium px-5 py-3">
+                  <span className="inline-flex items-center gap-1.5 justify-end">
+                    Average price change
+                    <InfoTip
+                      what="The arithmetic mean of every observation's forward return for this score band."
+                      why="The headline question — what would you have earned, on average, by holding the sector for the chosen horizon after seeing this score?"
+                      align="end"
+                    />
+                  </span>
+                </th>
+                <th className="text-right font-medium px-5 py-3">
+                  <span className="inline-flex items-center gap-1.5 justify-end">
+                    Typical price change
+                    <InfoTip
+                      what="The median forward return — the middle observation when you line them all up from worst to best."
+                      why="Less affected by extreme moves than the average. If the median is much lower than the mean, a few big winners are doing the lifting."
+                      align="end"
+                    />
+                  </span>
+                </th>
+                <th className="text-right font-medium px-5 py-3">
+                  <span className="inline-flex items-center gap-1.5 justify-end">
+                    % of time price went up
+                    <InfoTip
+                      what="The percentage of observations in this band where the forward return was positive (greater than zero)."
+                      why="Tells you whether the band was directionally correct more often than not — separate from how big the moves were."
+                      align="end"
+                    />
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -206,8 +267,13 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
       {/* Per-sector */}
       <div className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden">
         <div className="px-5 py-4 border-b border-white/5">
-          <h2 className="text-sm font-semibold text-zinc-200">
+          <h2 className="text-sm font-semibold text-zinc-200 inline-flex items-center gap-1.5">
             Did the score work for each sector?
+            <InfoTip
+              what={`Pearson correlation between the score and the next ${HORIZON_LABELS[horizon].toLowerCase()} price change, calculated separately for each of the 11 sectors.`}
+              why="The model can work overall yet be uneven across sectors. This breakdown shows where the model is genuinely useful and where it isn't."
+              align="start"
+            />
           </h2>
           <p className="text-xs text-zinc-500 mt-1">
             How much the score and actual price change moved together for each sector, over the next {HORIZON_LABELS[horizon].toLowerCase()}.
@@ -220,7 +286,16 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
               <tr>
                 <th className="text-left  font-medium px-5 py-3">Sector</th>
                 <th className="text-right font-medium px-5 py-3">Observations</th>
-                <th className="text-right font-medium px-5 py-3">How well it predicted</th>
+                <th className="text-right font-medium px-5 py-3">
+                  <span className="inline-flex items-center gap-1.5 justify-end">
+                    How well it predicted
+                    <InfoTip
+                      what='A short verdict ranging from "Backwards" through "No real signal" to "Worked well" — based on how strongly the score and forward return moved together.'
+                      why="Translates the underlying correlation number into a quick read so you don't have to know what 0.18 means."
+                      align="end"
+                    />
+                  </span>
+                </th>
                 <th className="px-5 py-3"></th>
               </tr>
             </thead>
@@ -307,17 +382,21 @@ function EmptyState() {
 }
 
 function PlainStat({
-  label, value, hint, color,
+  label, value, hint, color, info,
 }: {
   label: string
   value: string
   hint: string
   color: 'green' | 'red' | 'gray'
+  info?: { what: string; why?: string }
 }) {
   const valueColor = color === 'green' ? 'text-green-400' : color === 'red' ? 'text-red-400' : 'text-zinc-200'
   return (
     <div className="rounded-lg border border-white/5 bg-white/[0.02] p-5 space-y-1.5">
-      <p className="text-xs text-zinc-500 uppercase tracking-wider">{label}</p>
+      <p className="text-xs text-zinc-500 uppercase tracking-wider inline-flex items-center gap-1.5">
+        {label}
+        {info && <InfoTip what={info.what} why={info.why} align="start" />}
+      </p>
       <p className={`text-3xl font-bold tabular-nums ${valueColor}`}>{value}</p>
       <p className="text-xs text-zinc-500">{hint}</p>
     </div>
