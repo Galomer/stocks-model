@@ -62,13 +62,16 @@ def upsert_via_rest(rows: list, supabase_url: str, service_key: str) -> int:
     Uses `Prefer: resolution=merge-duplicates` which respects the UNIQUE constraint
     on (run_date, sector). More reliable than supabase-py 2.30's upsert wrapper.
     """
-    url = f"{supabase_url}/rest/v1/sector_scores?on_conflict=run_date,sector"
+    base = supabase_url.rstrip("/")
+    url = f"{base}/rest/v1/sector_scores?on_conflict=run_date%2Csector"
     headers = {
         "apikey":         service_key,
         "Authorization":  f"Bearer {service_key}",
         "Content-Type":   "application/json",
         "Prefer":         "resolution=merge-duplicates,return=representation",
     }
+    print(f"  POST {url}")
+    print(f"  apikey length: {len(service_key)}, starts with: {service_key[:8]}...")
     resp = requests.post(url, json=rows, headers=headers, timeout=30)
     if not resp.ok:
         raise RuntimeError(f"Supabase upsert failed [{resp.status_code}]: {resp.text}")
