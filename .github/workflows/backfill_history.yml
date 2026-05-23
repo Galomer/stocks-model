@@ -1,0 +1,39 @@
+name: Backfill Historical Scores
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backfill:
+    name: Backfill 3 years of historical scores
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: files/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r files/requirements.txt
+
+      - name: Backfill historical scores
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          FRED_API_KEY:         ${{ secrets.FRED_API_KEY }}
+        run: |
+          cd files
+          python backfill_history.py
