@@ -4,8 +4,7 @@ save_to_supabase.py — Run the sector model for all sectors and persist results
 Usage (called by GitHub Actions or manually):
     SUPABASE_URL=https://... SUPABASE_SERVICE_KEY=sbp_... python save_to_supabase.py
 
-Requires:
-    pip install supabase  (in addition to the existing requirements.txt)
+Talks to PostgREST directly via HTTP — no `supabase` SDK dependency required.
 """
 
 import os
@@ -14,7 +13,7 @@ import json
 from datetime import date
 
 import numpy as np
-from supabase import create_client, Client
+import requests
 
 from config import SECTOR_ETFS, TARGET_SECTOR, SECTOR_COMMODITIES, BENCHMARK, CYCLICAL_ETF, DEFENSIVE_ETF, FEATURE_WEIGHTS
 from data_loader import fetch_prices, fetch_fred, fetch_fear_greed
@@ -57,6 +56,25 @@ def clean_features(contributions: dict) -> dict:
     return out
 
 
+def upsert_via_rest(rows: list, supabase_url: str, service_key: str) -> int:
+    """
+    Upsert rows directly via the PostgREST REST API.
+    Uses `Prefer: resolution=merge-duplicates` which respects the UNIQUE constraint
+    on (run_date, sector). More reliable than supabase-py 2.30's upsert wrapper.
+    """
+    url = f"{supabase_url}/rest/v1/sector_scores?on_conflict=run_date,sector"
+    headers = {
+        "apikey":         service_key,
+        "Authorization":  f"Bearer {service_key}",
+        "Content-Type":   "application/json",
+        "Prefer":         "resolution=merge-duplicates,return=representation",
+    }
+    resp = requests.post(url, json=rows, headers=headers, timeout=30)
+    if not resp.ok:
+        raise RuntimeError(f"Supabase upsert failed [{resp.status_code}]: {resp.text}")
+    return len(resp.json())
+
+
 def main():
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_SERVICE_KEY")
@@ -64,7 +82,6 @@ def main():
         print("[error] SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables are required.")
         sys.exit(1)
 
-    sb: Client = create_client(url, key)
     run_date = date.today().isoformat()
 
     print(f"\n[save_to_supabase] Run date: {run_date}")
@@ -111,9 +128,8 @@ def main():
         print(f"  {sector:<5s} {sector_name:<30s} composite={row['composite']}")
 
     print(f"\n  Writing {len(rows)} rows to Supabase ...")
-    sb.table("sector_scores").delete().eq("run_date", run_date).execute()
-    resp = sb.table("sector_scores").insert(rows).execute()
-    print(f"  Done. {len(resp.data)} rows written for {run_date}.")
+    written = upsert_via_rest(rows, url, key)
+    print(f"  Done. {written} rows written for {run_date}.")
 
 
 if __name__ == "__main__":

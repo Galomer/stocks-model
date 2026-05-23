@@ -32,7 +32,6 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r files/requirements.txt
-          pip install supabase
 
       - name: Run sector model → Supabase
         env:
