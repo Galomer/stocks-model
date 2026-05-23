@@ -32,9 +32,9 @@ export default async function HomePage() {
           Which sectors look strong right now?
         </h1>
         <p className="text-zinc-400 text-sm max-w-xl">
-          Each of the 11 US stock-market sectors gets a single score from −100 (very bearish)
-          to +100 (very bullish), based on its price trend, the macro environment, market
-          sentiment, and the overall risk-on/risk-off mood. Updated daily after market close.
+          Each sector gets a forward-looking score from −100 to +100: what the model expects
+          over the next 1–3 months, not how price has moved lately. A sector that has rallied
+          hard can still score negative if the model sees pullback risk ahead.
         </p>
         {formatted && (
           <div className="flex items-center gap-1.5 text-xs text-zinc-500 pt-1">
@@ -115,10 +115,10 @@ export default async function HomePage() {
                   .filter((v): v is number => v !== null && !isNaN(v))
                 const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
                 const desc: Record<string, string> = {
-                  momentum:  'Are prices trending up?',
-                  macro:     'Is the macro backdrop supportive?',
-                  sentiment: 'Is the market calm and confident?',
-                  regime:    'Are investors in risk-on mode?',
+                  momentum:  'Forward view on price stretch — negative often means “strong run, pullback risk ahead”',
+                  macro:     'Rates, credit & dollar — supportive or headwind ahead?',
+                  sentiment: 'Fear vs complacency — low fear can read negative forward',
+                  regime:    'Market breadth & risk appetite — “too easy” can read negative',
                 }
                 const info = CATEGORY_INFO[cat]
                 return (

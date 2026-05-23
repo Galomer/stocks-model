@@ -5,6 +5,7 @@ import CategoryBreakdown from '@/components/CategoryBreakdown'
 import FeatureTable from '@/components/FeatureTable'
 import InfoTip from '@/components/InfoTip'
 import SectorHoldings from '@/components/SectorHoldings'
+import ScoreReadingGuide from '@/components/ScoreReadingGuide'
 import { COMPOSITE_INFO, COVERAGE_INFO } from '@/lib/descriptions'
 import { SECTOR_HOLDINGS } from '@/lib/sectorHoldings'
 import { notFound } from 'next/navigation'
@@ -119,20 +120,23 @@ export default async function SectorPage({ params }: Props) {
         </div>
         <ScoreBar score={score.composite} size="lg" />
         <div className="flex justify-between text-xs text-zinc-600">
-          <span>−100 Strongly Bearish</span>
+          <span>−100 Weaker returns expected ahead</span>
           <span>0 Neutral</span>
-          <span>Strongly Bullish +100</span>
+          <span>Stronger returns expected ahead +100</span>
         </div>
       </div>
+
+      <ScoreReadingGuide />
 
       {/* Category breakdown */}
       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-6 space-y-4">
         <h2 className="text-sm font-semibold text-zinc-300 inline-flex items-center gap-1.5">
           Category Breakdown
           <InfoTip
-            what="Each category groups related signals: Momentum (price trends), Macro & Rates (interest rates and credit), Sentiment (fear/greed), and Regime (risk-on vs risk-off)."
-            why="Looking at the categories separately helps explain why the headline score is what it is — e.g., a bullish Momentum offset by a bearish Macro."
+            what="Each category groups related forward-looking signals. The bars show what the model expects over the next 1–3 months — not whether the sector has been going up or down lately."
+            why="Example: XLK can have a great recent run and still show negative Momentum because the model treats that strength as stretched and flags pullback risk ahead."
             align="start"
+            placement="bottom"
           />
         </h2>
         <CategoryBreakdown score={score} />
@@ -154,9 +158,10 @@ export default async function SectorPage({ params }: Props) {
           <h2 className="text-sm font-semibold text-zinc-300 inline-flex items-center gap-1.5">
             Per-Feature Breakdown
             <InfoTip
-              what="Every individual signal that feeds the composite, grouped by category. Each row shows the signal's normalized score (-100 to +100) and the weight it carries."
-              why="Useful for diagnosing why a sector got the score it did and which signals are doing the heavy lifting on any given day."
+              what="Every individual signal that feeds the composite. Each score is the model's forward view for the next 1–3 months — negative often means 'stretched or headwind ahead,' not 'price is falling today.'"
+              why="Hover the (i) next to any row for a full explanation. If XLK has rallied hard, momentum rows often read negative because the model flags pullback risk — that is expected behavior."
               align="start"
+              placement="bottom"
             />
           </h2>
           <FeatureTable score={score} />

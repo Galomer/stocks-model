@@ -5,51 +5,51 @@
 
 export const CATEGORY_INFO: Record<string, { what: string; why: string }> = {
   momentum: {
-    what: 'Tracks how the sector\'s price is behaving — distance from moving averages, rate of change over 1/3/6 months, RSI, and relative strength versus the broader market.',
-    why:  'Price trends can persist (or, in shorter windows, reverse). The data-driven model has actually learned that strong recent momentum tends to mean-revert over 3-12 month horizons.',
+    what: 'How stretched or washed-out the sector\'s recent price action looks — distance from moving averages, 1/3/6-month returns, RSI, and relative strength vs the market.',
+    why:  'Important: a negative momentum score does NOT mean the sector is falling today. The model looks forward 1–3 months. When XLK (or any sector) has rallied hard, momentum often reads negative because the model treats that strength as “stretched” and flags higher pullback risk ahead.',
   },
   macro: {
-    what: 'Captures the interest-rate and credit environment: Treasury yield curve, real yields, high-yield and investment-grade credit spreads, the US Dollar Index, and sector-specific commodities.',
-    why:  'Fed policy, recession risk, and currency moves drive sector performance broadly. Tight credit spreads and a strong dollar are headwinds; widening spreads often mark capitulation lows.',
+    what: 'The interest-rate and credit environment: yield curve, credit spreads, the US Dollar, and sector commodities.',
+    why:  'Scores are forward-looking. Tight credit spreads or a strong dollar can feel fine today but still read negative because they have historically preceded weaker sector returns over the next 1–3 months.',
   },
   sentiment: {
-    what: 'Reads market mood through the VIX (expected volatility), VIX term structure (near-term vs 3-month VIX), and the CNN Fear & Greed Index.',
-    why:  'Extreme sentiment often precedes reversals. High fear marks bottoms; complacency marks tops. The backtest confirmed this — high VIX has historically preceded gains.',
+    what: 'Market mood via VIX, VIX term structure, and (when available) the CNN Fear & Greed Index.',
+    why:  'Low fear / high complacency often reads negative — calm markets can precede pullbacks. Spikes in fear often read positive because they have historically been followed by recoveries.',
   },
   regime: {
-    what: 'Cross-sector context: cyclical (XLY) vs defensive (XLP) leadership and how tightly this sector moves with the broader market.',
-    why:  'When investors prefer growth over safety, cyclicals lead. Tracks whether we\'re in risk-on or risk-off mode and where this sector sits relative to the market.',
+    what: 'Cross-sector context: cyclical vs defensive leadership, how many sectors are above their 50-DMA, and correlation with the broad market.',
+    why:  'When “everything looks great” (broad participation, cyclicals leading), the model often reads that as stretched and flags less upside ahead — even while prices are still rising.',
   },
 }
 
 export const FEATURE_INFO: Record<string, { what: string; why: string }> = {
   price_vs_50dma: {
-    what: 'How far above or below the 50-day moving average the sector is trading.',
-    why:  'A medium-term trend gauge — a popular benchmark used by trend-followers and discretionary traders alike.',
+    what: 'How far above or below the 50-day moving average the sector is trading right now.',
+    why:  'When price is well above the 50-DMA (a strong recent run), this row often turns negative — not because price is falling, but because the model treats that stretch as higher pullback risk over the next 1–3 months.',
   },
   price_vs_200dma: {
-    what: 'How far above or below the 200-day moving average the sector is trading.',
-    why:  'The classic long-term trend signal. Above 200dma = bull market; below = bear. One of the most-watched levels on Wall Street.',
+    what: 'How far above or below the 200-day moving average the sector is trading right now.',
+    why:  'Same forward logic as the 50-DMA: extended strength above the 200-DMA can read negative (stretched), while trading well below it can read positive (potential recovery ahead).',
   },
   roc_1m: {
     what: 'The percent change in the sector\'s price over the past month.',
-    why:  'Captures short-term price acceleration or deceleration.',
+    why:  'A hot 1-month run often reads negative here — the model learned that sharp short-term gains tend to mean-revert over the next 1–3 months.',
   },
   roc_3m: {
     what: 'The percent change in the sector\'s price over the past 3 months.',
-    why:  'A medium-term momentum window often used in academic momentum strategies.',
+    why:  'Strong 3-month performance can read negative: the model is asking “has this sector already run too far?” rather than “is it going up today?”',
   },
   roc_6m: {
     what: 'The percent change in the sector\'s price over the past 6 months.',
-    why:  'A longer-term momentum window — useful for identifying durable trends versus short-term noise.',
+    why:  'Extended 6-month rallies often flip this signal negative — stretched trend, pullback risk ahead.',
   },
   relative_strength_3m: {
     what: 'How the sector has performed versus the S&P 500 (SPY) over the past 3 months.',
-    why:  'Identifies sector leaders and laggards. Strong relative strength has historically reversed at this horizon.',
+    why:  'Leading the market for 3 months can read negative: the model often treats outsized outperformance as due for a pause or reversal ahead.',
   },
   rsi: {
-    what: 'The Relative Strength Index — a 0-100 momentum oscillator measuring recent gains versus recent losses.',
-    why:  'Above 70 is considered "overbought," below 30 "oversold." A widely-watched mean-reversion signal.',
+    what: 'The Relative Strength Index — a 0–100 oscillator of recent gains vs losses.',
+    why:  'High RSI (overbought) often reads negative: price has been strong recently, but the model flags that as stretched for forward returns. Low RSI can read positive (oversold bounce potential).',
   },
   dist_52w_high: {
     what: 'How far the sector is currently trading below its highest price in the past 52 weeks (always ≤ 0%).',
@@ -69,7 +69,7 @@ export const FEATURE_INFO: Record<string, { what: string; why: string }> = {
   },
   hy_spread_level: {
     what: 'The yield premium investors demand to hold high-yield (junk) bonds over Treasuries.',
-    why:  'Wide spreads = market stress and fear; tight spreads = complacency. One of the cleanest real-time gauges of risk appetite.',
+    why:  'Very tight spreads (low fear) often read negative — complacency can precede weaker equity returns ahead. Wide spreads can read positive (stress already priced in).',
   },
   hy_spread_chg_1m: {
     what: 'The 1-month change in the high-yield credit spread.',
@@ -117,8 +117,22 @@ export const FEATURE_INFO: Record<string, { what: string; why: string }> = {
   },
   breadth_above_50dma: {
     what: 'The percentage of the 11 SPDR sector ETFs currently trading above their own 50-day moving average.',
-    why:  'A market-wide regime gauge. When breadth is broad (8+ of 11 sectors above 50-DMA), bull-market dynamics are healthy. When breadth is thin (only a few sectors above), rallies are usually fragile.',
+    why:  'A market-wide regime gauge. When almost every sector is above its 50-DMA, the rally can look “too easy” — the model often treats that as stretched and flags less upside ahead over the next 1–3 months.',
   },
+}
+
+const DEFAULT_FEATURE_INFO = {
+  what: 'One of the quantitative signals that feed the composite score.',
+  why:
+    'This score is about what the model expects over the next 1–3 months, not what already happened. Negative often means “stretched or headwind ahead”; positive often means “washed out or tailwind ahead.”',
+}
+
+/** Lookup with fallback so every feature row always has tooltip text. */
+export function getFeatureInfo(name: string): { what: string; why: string } {
+  return FEATURE_INFO[name] ?? {
+    ...DEFAULT_FEATURE_INFO,
+    what: `${DEFAULT_FEATURE_INFO.what} (${name.replace(/_/g, ' ')})`,
+  }
 }
 
 export const COMPOSITE_INFO = {

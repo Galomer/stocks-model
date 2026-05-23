@@ -3,7 +3,8 @@
 import { CATEGORY_ORDER, CATEGORY_LABELS, type SectorScore, type CategoryKey } from '@/lib/types'
 import ScoreBar from './ScoreBar'
 import InfoTip from './InfoTip'
-import { FEATURE_INFO, CATEGORY_INFO } from '@/lib/descriptions'
+import { getFeatureInfo, CATEGORY_INFO } from '@/lib/descriptions'
+import { interpretFeatureScore } from '@/lib/scoreInterpretation'
 
 interface FeatureTableProps {
   score: SectorScore
@@ -36,11 +37,21 @@ const FEATURE_LABELS: Record<string, string> = {
   breadth_above_50dma:      'Sector Breadth (% above 50-DMA)',
 }
 
+const WEIGHT_INFO = {
+  what: 'How much influence this signal has in today\'s composite score (learned from 2019–2026 backtests).',
+  why: 'Higher weight = this signal moved the headline score more. A feature can have a high weight even when its raw reading looks counter-intuitive — that is intentional mean-reversion logic.',
+}
+
 export default function FeatureTable({ score }: FeatureTableProps) {
   if (!score.features) return null
 
   return (
     <div className="space-y-6">
+      <p className="text-xs text-zinc-500 leading-relaxed">
+        Each row shows what the model expects ahead, not what already happened. Hover the{' '}
+        <span className="text-zinc-400">(i)</span> on any line for a full explanation.
+      </p>
+
       {CATEGORY_ORDER.map((cat) => {
         const features = Object.entries(score.features!).filter(
           ([, v]) => v.category === cat
@@ -50,32 +61,56 @@ export default function FeatureTable({ score }: FeatureTableProps) {
         const catInfo = CATEGORY_INFO[cat]
 
         return (
-          <div key={cat}>
+          <div key={cat} className="overflow-visible">
             <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3 inline-flex items-center gap-1.5">
               {CATEGORY_LABELS[cat as CategoryKey]}
-              {catInfo && <InfoTip what={catInfo.what} why={catInfo.why} align="start" />}
+              {catInfo && (
+                <InfoTip what={catInfo.what} why={catInfo.why} align="start" placement="bottom" />
+              )}
             </h3>
-            <div className="space-y-2">
+
+            <div className="hidden sm:grid grid-cols-[1fr_140px_56px_48px] gap-3 text-[10px] uppercase tracking-wider text-zinc-600 mb-2 px-0.5">
+              <span>Signal</span>
+              <span>Score (forward view)</span>
+              <span className="text-right">Value</span>
+              <span className="text-right inline-flex items-center justify-end gap-1">
+                Wt
+                <InfoTip what={WEIGHT_INFO.what} why={WEIGHT_INFO.why} align="end" placement="bottom" size="sm" />
+              </span>
+            </div>
+
+            <div className="space-y-3">
               {features.map(([name, detail]) => {
                 const scaled = detail.score !== null ? detail.score * 100 : null
                 const isNull = scaled === null || isNaN(scaled)
-                const info = FEATURE_INFO[name]
+                const info = getFeatureInfo(name)
+                const hint = interpretFeatureScore(name, scaled)
+
                 return (
-                  <div
-                    key={name}
-                    className="grid grid-cols-[1fr_140px_52px_44px] items-center gap-3 text-sm"
-                  >
-                    <span className="text-gray-300 truncate inline-flex items-center gap-1.5 min-w-0">
-                      <span className="truncate">{FEATURE_LABELS[name] ?? name}</span>
-                      {info && <InfoTip what={info.what} why={info.why} align="start" />}
-                    </span>
-                    <ScoreBar score={scaled} size="sm" />
-                    <span className="tabular-nums text-right text-gray-400">
-                      {isNull ? 'n/a' : `${scaled! > 0 ? '+' : ''}${scaled!.toFixed(1)}`}
-                    </span>
-                    <span className="tabular-nums text-right text-gray-600 text-xs">
-                      w={detail.weight}
-                    </span>
+                  <div key={name} className="space-y-1 overflow-visible">
+                    <div className="grid grid-cols-[1fr_140px_56px_48px] items-center gap-3 text-sm">
+                      <span className="inline-flex items-center gap-1.5 min-w-0">
+                        <span className="truncate text-gray-300">
+                          {FEATURE_LABELS[name] ?? name}
+                        </span>
+                        <InfoTip
+                          what={info.what}
+                          why={info.why}
+                          align="start"
+                          placement="bottom"
+                        />
+                      </span>
+                      <ScoreBar score={scaled} size="sm" />
+                      <span className="tabular-nums text-right text-gray-400">
+                        {isNull ? 'n/a' : `${scaled! > 0 ? '+' : ''}${scaled!.toFixed(1)}`}
+                      </span>
+                      <span className="tabular-nums text-right text-gray-600 text-xs">
+                        {detail.weight.toFixed(2)}
+                      </span>
+                    </div>
+                    {hint && (
+                      <p className="text-[11px] text-zinc-600 leading-snug pl-0.5">{hint}</p>
+                    )}
                   </div>
                 )
               })}
