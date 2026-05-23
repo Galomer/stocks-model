@@ -14,6 +14,33 @@ export type SectorScore = {
   created_at: string
 }
 
+export type HistoricalScore = {
+  id: number
+  as_of_date: string
+  sector: string
+  sector_name: string
+  composite: number | null
+  momentum: number | null
+  macro: number | null
+  sentiment: number | null
+  regime: number | null
+  available: number | null
+  coverage: number | null
+  fwd_return_1m: number | null
+  fwd_return_3m: number | null
+  fwd_return_6m: number | null
+  fwd_return_1y: number | null
+}
+
+export type Horizon = 'fwd_return_1m' | 'fwd_return_3m' | 'fwd_return_6m' | 'fwd_return_1y'
+
+export const HORIZON_LABELS: Record<Horizon, string> = {
+  fwd_return_1m: '1 Month',
+  fwd_return_3m: '3 Months',
+  fwd_return_6m: '6 Months',
+  fwd_return_1y: '1 Year',
+}
+
 export type FeatureDetail = {
   score: number | null
   weight: number
