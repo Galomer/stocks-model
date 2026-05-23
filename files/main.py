@@ -16,7 +16,7 @@ import sys
 from typing import Optional
 import numpy as np
 
-from config import SECTOR_ETFS, TARGET_SECTOR, SECTOR_COMMODITIES, BENCHMARK, CYCLICAL_ETF, DEFENSIVE_ETF, FEATURE_WEIGHTS
+from config import SECTOR_ETFS, TARGET_SECTOR, SECTOR_COMMODITIES, BENCHMARK, BOND_ETF, CYCLICAL_ETF, DEFENSIVE_ETF, FEATURE_WEIGHTS
 from data_loader import fetch_prices, fetch_fred, fetch_fear_greed
 from features import build_momentum_features, build_macro_features, build_sentiment_features, build_regime_features
 from score import compute_composite, CATEGORY_ORDER, FEATURE_CATEGORY
@@ -132,7 +132,7 @@ def run(sector: Optional[str] = None, verbose: bool = False, all_sectors: bool =
     sectors = list(SECTOR_ETFS.keys()) if all_sectors else [sector or TARGET_SECTOR]
 
     # Build the full ticker list
-    tickers = list(SECTOR_ETFS.keys()) + [BENCHMARK, "^VIX", "^VIX3M"]
+    tickers = list(SECTOR_ETFS.keys()) + [BENCHMARK, BOND_ETF, "^VIX", "^VIX3M"]
     for s in sectors:
         comm = SECTOR_COMMODITIES.get(s)
         if comm:

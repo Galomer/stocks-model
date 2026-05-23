@@ -17,22 +17,37 @@ Notes
 
 import os
 import sys
-from datetime import date, timedelta
+from datetime import date
 
 import numpy as np
 import pandas as pd
 import requests
 
-from config import SECTOR_ETFS, SECTOR_COMMODITIES, BENCHMARK, FEATURE_WEIGHTS, LOOKBACK_DAYS
+from config import (
+    SECTOR_ETFS,
+    SECTOR_COMMODITIES,
+    BENCHMARK,
+    BOND_ETF,
+    FEATURE_WEIGHTS,
+)
 from data_loader import fetch_prices, fetch_fred
 from features import build_momentum_features, build_macro_features, build_sentiment_features, build_regime_features
 from score import compute_composite
 
 
 # ── Tunables ───────────────────────────────────────────────────────────────
-BACKFILL_YEARS = 3            # how far back to backfill scores
-SAMPLE_EVERY_N_DAYS = 5       # 1 = daily, 5 = weekly-ish (Fri only)
-EXTRA_LOOKBACK_DAYS = 760     # buffer for z-score baseline at the earliest backfill date
+# Backfill from 2019-01-01 to today, weekly cadence. This window covers:
+#   • late-cycle 2019 bull (momentum-driven)
+#   • 2020 COVID crash + V-shaped recovery
+#   • 2021 reopening rally
+#   • 2022 inflation / rate-shock bear market
+#   • 2023-2025 disinflation / AI-led rally
+# Mixing regimes is critical: any feature whose sign flips between halves of
+# the sample is unstable and gets dropped by optimize_weights.py.
+BACKFILL_START_DATE = "2019-01-01"
+SAMPLE_EVERY_N_DAYS = 5         # 5 = weekly Fri-ish on a business-day index
+EXTRA_LOOKBACK_DAYS = 760       # baseline buffer for z-score windows at the earliest backfill date
+
 FORWARD_HORIZONS = {
     "fwd_return_1m": 21,
     "fwd_return_3m": 63,
@@ -125,11 +140,19 @@ def main():
         print("[error] SUPABASE_URL and SUPABASE_SERVICE_KEY required")
         sys.exit(1)
 
-    print(f"\n[backfill_history] {BACKFILL_YEARS}y, every {SAMPLE_EVERY_N_DAYS}-day samples")
+    start_ts = pd.Timestamp(BACKFILL_START_DATE)
+    today = pd.Timestamp(date.today())
+    backfill_days = max((today - start_ts).days, 1)
+    backfill_years_label = backfill_days / 365.25
+
+    print(
+        f"\n[backfill_history] from {BACKFILL_START_DATE} to {today.date()} "
+        f"(~{backfill_years_label:.1f}y), every {SAMPLE_EVERY_N_DAYS}-day samples"
+    )
 
     # 1. Fetch full data once. We need: backfill window + 1y forward + 760d z-score baseline.
-    total_days = BACKFILL_YEARS * 365 + 365 + EXTRA_LOOKBACK_DAYS
-    tickers = list(SECTOR_ETFS.keys()) + [BENCHMARK, "^VIX", "^VIX3M"]
+    total_days = backfill_days + 365 + EXTRA_LOOKBACK_DAYS
+    tickers = list(SECTOR_ETFS.keys()) + [BENCHMARK, BOND_ETF, "^VIX", "^VIX3M"]
     for c in SECTOR_COMMODITIES.values():
         if c: tickers.append(c)
     tickers = list(dict.fromkeys(tickers))
@@ -144,10 +167,11 @@ def main():
     print(f"    -> {len(fred)} rows, {list(fred.columns)}")
 
     # 2. Build the list of as-of dates (business days that exist in our price index)
-    today = pd.Timestamp(date.today())
-    earliest = today - pd.Timedelta(days=BACKFILL_YEARS * 365)
-    candidate_dates = prices.index[(prices.index >= earliest) & (prices.index <= today)]
+    candidate_dates = prices.index[(prices.index >= start_ts) & (prices.index <= today)]
     sample_dates = candidate_dates[::SAMPLE_EVERY_N_DAYS]
+    if len(sample_dates) == 0:
+        print("[error] No sample dates found in price index — check data fetch.")
+        sys.exit(1)
     print(f"  Sampling {len(sample_dates)} dates from {sample_dates[0].date()} to {sample_dates[-1].date()}")
 
     # 3. Score each (date, sector)

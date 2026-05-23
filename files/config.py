@@ -25,6 +25,7 @@ TARGET_SECTOR = "XLK"
 BENCHMARK     = "SPY"
 CYCLICAL_ETF  = "XLY"
 DEFENSIVE_ETF = "XLP"
+BOND_ETF      = "TLT"   # 20-year Treasury — used for cross-asset bond/equity ratio
 
 # Sector-specific commodity to track (set to None if not applicable)
 SECTOR_COMMODITIES = {
@@ -84,6 +85,7 @@ FEATURE_WEIGHTS = {
     "roc_3m":               1.0,
     "roc_6m":               0.5,
     "rsi":                  0.5,
+    "dist_52w_high":        1.0,   # NEW — distance below 52-week high (mean-reversion)
 
     # — Macro
     "yield_curve_slope":    1.0,
@@ -94,13 +96,16 @@ FEATURE_WEIGHTS = {
     "ig_spread_level":      0.5,
     "usd_change_3m":        1.0,
     "commodity_change_3m":  1.0,
+    "bond_equity_ratio_chg_3m": 1.0,  # NEW — TLT/SPY 3m change (cross-asset risk on/off)
 
     # — Sentiment
     "vix_level":            1.0,
     "vix_term_structure":   1.0,
     "fear_greed":           0.5,
+    "vix_pctile_1y":        1.0,   # NEW — VIX percentile rank over trailing year
 
     # — Regime
     "cyclical_vs_defensive": 1.0,
     "sector_vs_market_corr":  0.5,
+    "breadth_above_50dma":    1.0, # NEW — % of 11 sectors above their own 50-DMA
 }

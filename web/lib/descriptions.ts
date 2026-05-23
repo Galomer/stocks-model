@@ -51,6 +51,10 @@ export const FEATURE_INFO: Record<string, { what: string; why: string }> = {
     what: 'The Relative Strength Index — a 0-100 momentum oscillator measuring recent gains versus recent losses.',
     why:  'Above 70 is considered "overbought," below 30 "oversold." A widely-watched mean-reversion signal.',
   },
+  dist_52w_high: {
+    what: 'How far the sector is currently trading below its highest price in the past 52 weeks (always ≤ 0%).',
+    why:  'A pure sector-level mean-reversion gauge. Sectors that have sold off well below their 1-year high have historically tended to recover faster than ones still pinned near new highs.',
+  },
   yield_curve_slope: {
     what: 'The 10-year Treasury yield minus the 2-year Treasury yield.',
     why:  'A steepening curve signals rising growth expectations; an inverted curve (negative slope) has preceded most US recessions.',
@@ -83,6 +87,10 @@ export const FEATURE_INFO: Record<string, { what: string; why: string }> = {
     what: 'The 3-month percent change in the sector\'s reference commodity (e.g., oil for Energy, copper for Materials/Industrials).',
     why:  'Commodity prices flow directly into sector earnings — oil moves with Energy, copper with Industrials and Materials.',
   },
+  bond_equity_ratio_chg_3m: {
+    what: 'The 3-month percent change in the ratio of long-dated Treasuries (TLT) to the S&P 500 (SPY).',
+    why:  'A clean cross-asset risk-on / risk-off gauge: when TLT outperforms SPY, money is fleeing stocks for safety. Historically a falling TLT/SPY ratio has preceded sector rallies.',
+  },
   vix_level: {
     what: 'The CBOE Volatility Index — the market\'s expected 30-day volatility, a.k.a. the "fear gauge".',
     why:  'Low VIX = calm, often complacent. Spikes mark fear and panic. Historically high VIX readings have preceded equity rallies.',
@@ -95,6 +103,10 @@ export const FEATURE_INFO: Record<string, { what: string; why: string }> = {
     what: 'CNN\'s composite Fear & Greed Index (0 = extreme fear, 100 = extreme greed).',
     why:  'Aggregates seven sentiment indicators into one number. Extreme readings on either side often mark turning points.',
   },
+  vix_pctile_1y: {
+    what: 'Where the current VIX sits within its trailing 1-year range, on a 0-to-100 percentile scale.',
+    why:  'Less affected by extreme tail events than a raw z-score. A VIX in the 90th+ percentile of its 1y range has historically been a strong mean-reversion-bullish setup.',
+  },
   cyclical_vs_defensive: {
     what: 'The 3-month change in the ratio of XLY (consumer discretionary) to XLP (consumer staples).',
     why:  'A rising ratio means investors prefer growth over safety — risk-on. The model has learned that recent rotation tends to reverse over 3 months.',
@@ -103,11 +115,15 @@ export const FEATURE_INFO: Record<string, { what: string; why: string }> = {
     what: 'The 60-day rolling correlation between the sector\'s daily returns and the S&P 500.',
     why:  'High correlation means the sector moves with the market and offers little diversification. Drops in correlation often signal rotation or stress.',
   },
+  breadth_above_50dma: {
+    what: 'The percentage of the 11 SPDR sector ETFs currently trading above their own 50-day moving average.',
+    why:  'A market-wide regime gauge. When breadth is broad (8+ of 11 sectors above 50-DMA), bull-market dynamics are healthy. When breadth is thin (only a few sectors above), rallies are usually fragile.',
+  },
 }
 
 export const COMPOSITE_INFO = {
-  what: 'A single number from -100 (very bearish) to +100 (very bullish) combining all 19 features into one score, weighted by how well each has historically predicted forward returns.',
-  why:  'A composite reduces noise — no single signal is perfect, but combining many gives a more robust read on direction. The weights and signs are learned from the past 3 years of data.',
+  what: 'A single number from -100 (very bearish) to +100 (very bullish) combining 23 features into one score. Weights and signs are learned from history; features whose predictive sign flips between regimes are dropped entirely.',
+  why:  'A composite reduces noise — no single signal is perfect, but combining many gives a more robust read on direction. Trained on weekly observations going back to 2019, blending 1-month and 3-month forward-return correlations.',
 }
 
 export const COVERAGE_INFO = {

@@ -15,7 +15,7 @@ from datetime import date
 import numpy as np
 import requests
 
-from config import SECTOR_ETFS, TARGET_SECTOR, SECTOR_COMMODITIES, BENCHMARK, CYCLICAL_ETF, DEFENSIVE_ETF, FEATURE_WEIGHTS
+from config import SECTOR_ETFS, TARGET_SECTOR, SECTOR_COMMODITIES, BENCHMARK, BOND_ETF, CYCLICAL_ETF, DEFENSIVE_ETF, FEATURE_WEIGHTS
 from data_loader import fetch_prices, fetch_fred, fetch_fear_greed
 from features import build_momentum_features, build_macro_features, build_sentiment_features, build_regime_features
 from score import compute_composite
@@ -127,7 +127,7 @@ def main():
     print(f"\n[save_to_supabase] Run date: {run_date}")
 
     # Build full ticker list
-    tickers = list(SECTOR_ETFS.keys()) + [BENCHMARK, "^VIX", "^VIX3M"]
+    tickers = list(SECTOR_ETFS.keys()) + [BENCHMARK, BOND_ETF, "^VIX", "^VIX3M"]
     for s in SECTOR_ETFS:
         comm = SECTOR_COMMODITIES.get(s)
         if comm:

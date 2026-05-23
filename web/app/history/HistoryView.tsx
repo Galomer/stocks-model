@@ -68,14 +68,14 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
         <div className="space-y-2">
           <p className="font-medium text-white">How to read this page</p>
           <p>
-            Every business day for the past 3 years, we calculated each sector&rsquo;s score using the same model
+            Every Friday since January 2019, we re-calculated each sector&rsquo;s score using the same model
             you see on the &ldquo;Today&rdquo; page (with no peeking at future data). Then we tracked what
             actually happened to each sector&rsquo;s price 1, 3, 6, and 12 months later.
           </p>
           <p className="text-zinc-400">
             <span className="font-medium text-zinc-300">A working model</span> would mean high scores led to
             price increases and low scores led to price decreases. Pick a time horizon below to see how
-            the model actually did.
+            the model actually did across the 2019 bull, COVID crash, 2022 bear and 2023-25 rally.
           </p>
         </div>
       </div>
@@ -364,8 +364,9 @@ function Header() {
         Has the score actually predicted prices?
       </h1>
       <p className="text-zinc-400 text-sm max-w-2xl">
-        We re-ran the model on every business day for the past 3 years and compared each score to
-        what the sector&rsquo;s price actually did over the next 1, 3, 6, and 12 months.
+        We re-ran the model every Friday going back to January 2019 and compared each score to
+        what the sector&rsquo;s price actually did over the next 1, 3, 6, and 12 months — across
+        multiple bull and bear cycles.
       </p>
     </div>
   )
