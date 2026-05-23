@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import requests
 import yfinance as yf
-import pandas_datareader.data as web
 
 from config import FRED_SERIES, LOOKBACK_DAYS
 
@@ -58,28 +57,31 @@ def fetch_prices(tickers: List[str], days_back: int = LOOKBACK_DAYS) -> pd.DataF
 
 def fetch_fred(days_back: int = LOOKBACK_DAYS) -> pd.DataFrame:
     """
-    Download macro series from FRED using pandas-datareader.
-    Returns a DataFrame with FRED series IDs as columns, forward-filled.
-
-    Free, no API key required. If a series fails, it's dropped rather than
-    failing the whole fetch.
+    Download macro series directly from the FRED CSV endpoint.
+    No API key required. Each series is fetched individually; failures are
+    silently dropped so the model still runs with reduced coverage.
     """
     start = _start_date(days_back)
-    series_ids = list(FRED_SERIES.keys())
     results = {}
 
-    # Fetch all at once; fall back to one-by-one if the batch call fails
-    try:
-        batch = web.DataReader(series_ids, "fred", start)
-        for col in batch.columns:
-            results[col] = batch[col]
-    except Exception:
-        for sid in series_ids:
-            try:
-                s = web.DataReader(sid, "fred", start)
-                results[sid] = s[sid] if isinstance(s, pd.DataFrame) else s
-            except Exception as e:
-                print(f"  [warn] FRED series {sid} unavailable: {e}")
+    for sid in FRED_SERIES:
+        url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}&vintage_date="
+        # Use the observation endpoint which supports a start date filter
+        obs_url = (
+            f"https://fred.stlouisfed.org/graph/fredgraph.csv"
+            f"?id={sid}&cosd={start}"
+        )
+        try:
+            resp = requests.get(obs_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+            resp.raise_for_status()
+            from io import StringIO
+            df_s = pd.read_csv(StringIO(resp.text), parse_dates=[0], index_col=0)
+            df_s.columns = [sid]
+            df_s = df_s.replace(".", float("nan")).infer_objects()
+            df_s[sid] = pd.to_numeric(df_s[sid], errors="coerce")
+            results[sid] = df_s[sid]
+        except Exception as e:
+            print(f"  [warn] FRED series {sid} unavailable: {e}")
 
     if not results:
         return pd.DataFrame()
