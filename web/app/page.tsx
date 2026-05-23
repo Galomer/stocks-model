@@ -24,14 +24,15 @@ export default async function HomePage() {
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-zinc-500 text-sm">
           <TrendingUp className="w-4 h-4" />
-          <span>US Equity Sector Rankings</span>
+          <span>Today&rsquo;s Sector Rankings</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-          Sector Direction Model
+          Which sectors look strong right now?
         </h1>
         <p className="text-zinc-400 text-sm max-w-xl">
-          Composite signal score across momentum, macro & rates, sentiment, and market
-          regime — updated daily after market close.
+          Each of the 11 US stock-market sectors gets a single score from −100 (very bearish)
+          to +100 (very bullish), based on its price trend, the macro environment, market
+          sentiment, and the overall risk-on/risk-off mood. Updated daily after market close.
         </p>
         {formatted && (
           <div className="flex items-center gap-1.5 text-xs text-zinc-500 pt-1">
@@ -93,24 +94,34 @@ export default async function HomePage() {
           </div>
 
           {/* Category mini-scores */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {CATEGORY_ORDER.map((cat) => {
-              const vals = scores
-                .map((s) => s[cat] as number | null)
-                .filter((v): v is number => v !== null && !isNaN(v))
-              const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
-              return (
-                <div key={cat} className="rounded-lg border border-white/5 bg-white/[0.02] p-4 space-y-2">
-                  <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
-                    {CATEGORY_LABELS[cat]} avg
+          <div>
+            <p className="text-xs text-zinc-500 mb-2">Average across all 11 sectors, by category:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {CATEGORY_ORDER.map((cat) => {
+                const vals = scores
+                  .map((s) => s[cat] as number | null)
+                  .filter((v): v is number => v !== null && !isNaN(v))
+                const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
+                const desc: Record<string, string> = {
+                  momentum:  'Are prices trending up?',
+                  macro:     'Is the macro backdrop supportive?',
+                  sentiment: 'Is the market calm and confident?',
+                  regime:    'Are investors in risk-on mode?',
+                }
+                return (
+                  <div key={cat} className="rounded-lg border border-white/5 bg-white/[0.02] p-4 space-y-2">
+                    <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
+                      {CATEGORY_LABELS[cat]}
+                    </div>
+                    <div className={`text-2xl font-bold tabular-nums ${directionColor(avg)}`}>
+                      {avg !== null ? `${avg > 0 ? '+' : ''}${avg.toFixed(1)}` : 'n/a'}
+                    </div>
+                    <ScoreBar score={avg} size="sm" />
+                    <p className="text-xs text-zinc-500 pt-1">{desc[cat]}</p>
                   </div>
-                  <div className={`text-2xl font-bold tabular-nums ${directionColor(avg)}`}>
-                    {avg !== null ? `${avg > 0 ? '+' : ''}${avg.toFixed(1)}` : 'n/a'}
-                  </div>
-                  <ScoreBar score={avg} size="sm" />
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </>
       )}

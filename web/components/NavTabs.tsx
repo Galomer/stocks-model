@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 
 const TABS = [
   { href: '/',        label: 'Today' },
-  { href: '/history', label: 'Backtest' },
+  { href: '/history', label: 'Track Record' },
 ]
 
 export default function NavTabs() {

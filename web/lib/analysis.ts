@@ -25,11 +25,11 @@ export type Bucket = {
 }
 
 const BUCKET_DEFS: Array<[string, number, number]> = [
-  ['Strongly Bearish (≤ −60)', -200, -60],
-  ['Bearish (−60 to −25)',     -60, -25],
-  ['Neutral (−25 to +25)',     -25,  25],
-  ['Bullish (+25 to +60)',      25,  60],
-  ['Strongly Bullish (≥ +60)',  60, 200],
+  ['Strongly bearish (sell signal, score ≤ −60)',  -200, -60],
+  ['Bearish (−60 to −25)',                          -60, -25],
+  ['Neutral (−25 to +25, no strong signal)',        -25,  25],
+  ['Bullish (+25 to +60)',                           25,  60],
+  ['Strongly bullish (buy signal, score ≥ +60)',     60, 200],
 ]
 
 export function bucketize(pairs: Pair[]): Bucket[] {

@@ -5,7 +5,7 @@ import type { HistoricalScore, Horizon } from '@/lib/types'
 import { HORIZON_LABELS } from '@/lib/types'
 import { pairsForHorizon, bucketize, pearson, correlationBySector } from '@/lib/analysis'
 import ScatterPlot from '@/components/ScatterPlot'
-import { TrendingUp, AlertTriangle, BarChart3 } from 'lucide-react'
+import { TrendingUp, AlertTriangle, BarChart3, HelpCircle } from 'lucide-react'
 
 const HORIZONS: Horizon[] = ['fwd_return_1m', 'fwd_return_3m', 'fwd_return_6m', 'fwd_return_1y']
 
@@ -25,6 +25,20 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
 
   const totalSamples = pairs.length
 
+  const bullishAvg = useMemo(() => {
+    const all = buckets.filter((x) => x.min >= 25 && x.n > 0)
+    const n = all.reduce((a, b) => a + b.n, 0)
+    if (!n) return null
+    return all.reduce((a, b) => a + b.meanReturn * b.n, 0) / n
+  }, [buckets])
+
+  const bearishAvg = useMemo(() => {
+    const all = buckets.filter((x) => x.max <= -25 && x.n > 0)
+    const n = all.reduce((a, b) => a + b.n, 0)
+    if (!n) return null
+    return all.reduce((a, b) => a + b.meanReturn * b.n, 0) / n
+  }, [buckets])
+
   if (!rows.length) {
     return (
       <div className="space-y-8">
@@ -34,197 +48,230 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
     )
   }
 
+  // Plain-English verdict on the model based on correlation strength + sign
+  const verdict = (() => {
+    if (corr > 0.2)   return { tone: 'green',  text: 'Higher scores have led to higher returns. The model worked at this horizon.' }
+    if (corr > 0.05)  return { tone: 'green',  text: 'Higher scores have slightly led to higher returns. The model has been mildly useful.' }
+    if (corr > -0.05) return { tone: 'gray',   text: 'No clear relationship. The score did not reliably predict returns at this horizon.' }
+    if (corr > -0.2)  return { tone: 'red',    text: 'Higher scores have slightly led to lower returns — the model has been mildly contrarian.' }
+    return                  { tone: 'red',    text: 'Higher scores have led to lower returns — the model has been a contrarian indicator at this horizon.' }
+  })()
+
   return (
     <div className="space-y-8">
       <Header />
 
-      {/* Meta info */}
-      <div className="flex flex-wrap gap-4 text-xs text-zinc-500">
-        {dateRange && (
-          <span>Range: <span className="text-zinc-300">{dateRange.from}</span> → <span className="text-zinc-300">{dateRange.to}</span></span>
-        )}
-        <span>Samples: <span className="text-zinc-300 tabular-nums">{totalSamples.toLocaleString()}</span></span>
-        <span>Sectors: <span className="text-zinc-300">11</span></span>
+      {/* How to read */}
+      <div className="rounded-xl border border-blue-500/10 bg-blue-500/[0.04] p-5 flex gap-3 text-sm text-zinc-300">
+        <HelpCircle className="w-5 h-5 shrink-0 mt-0.5 text-blue-400" />
+        <div className="space-y-2">
+          <p className="font-medium text-white">How to read this page</p>
+          <p>
+            Every business day for the past 3 years, we calculated each sector&rsquo;s score using the same model
+            you see on the &ldquo;Today&rdquo; page (with no peeking at future data). Then we tracked what
+            actually happened to each sector&rsquo;s price 1, 3, 6, and 12 months later.
+          </p>
+          <p className="text-zinc-400">
+            <span className="font-medium text-zinc-300">A working model</span> would mean high scores led to
+            price increases and low scores led to price decreases. Pick a time horizon below to see how
+            the model actually did.
+          </p>
+        </div>
       </div>
+
+      {/* Date range */}
+      {dateRange && (
+        <div className="flex flex-wrap gap-4 text-xs text-zinc-500">
+          <span>Data range: <span className="text-zinc-300">{dateRange.from}</span> → <span className="text-zinc-300">{dateRange.to}</span></span>
+          <span>Total observations: <span className="text-zinc-300 tabular-nums">{totalSamples.toLocaleString()}</span></span>
+        </div>
+      )}
 
       {/* Horizon tabs */}
-      <div className="flex gap-1 p-1 rounded-lg border border-white/5 bg-white/[0.02] w-fit">
-        {HORIZONS.map((h) => (
-          <button
-            key={h}
-            onClick={() => setHorizon(h)}
-            className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              horizon === h
-                ? 'bg-white/10 text-white'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            {HORIZON_LABELS[h]}
-          </button>
-        ))}
+      <div>
+        <p className="text-xs text-zinc-500 mb-2">Look ahead by:</p>
+        <div className="flex gap-1 p-1 rounded-lg border border-white/5 bg-white/[0.02] w-fit">
+          {HORIZONS.map((h) => (
+            <button
+              key={h}
+              onClick={() => setHorizon(h)}
+              className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                horizon === h
+                  ? 'bg-white/10 text-white'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              {HORIZON_LABELS[h]}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Headline correlation */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <StatCard
-          label="Score ↔ Return Correlation"
-          value={corr.toFixed(3)}
-          hint={
-            corr >  0.2 ? 'Strong positive — model predictive' :
-            corr >  0.05 ? 'Mild positive' :
-            corr > -0.05 ? 'No clear relationship' :
-            corr > -0.2 ? 'Mild negative' :
-                          'Negative — model inverted'
-          }
-          color={corr > 0.05 ? 'green' : corr < -0.05 ? 'red' : 'gray'}
+      {/* Plain-English verdict */}
+      <div className={`rounded-xl border p-5 ${
+        verdict.tone === 'green' ? 'border-green-500/20 bg-green-500/[0.05]' :
+        verdict.tone === 'red'   ? 'border-red-500/20   bg-red-500/[0.05]'   :
+                                   'border-white/10    bg-white/[0.02]'
+      }`}>
+        <p className="text-xs uppercase tracking-wider text-zinc-500 mb-1">The verdict ({HORIZON_LABELS[horizon]})</p>
+        <p className="text-base text-white">{verdict.text}</p>
+      </div>
+
+      {/* Headline stats — plain English */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <PlainStat
+          label={`When the score said BULLISH (+25 or higher)`}
+          value={bullishAvg !== null ? `${bullishAvg >= 0 ? '+' : ''}${(bullishAvg * 100).toFixed(2)}%` : 'n/a'}
+          hint={`Average price change over the next ${HORIZON_LABELS[horizon].toLowerCase()}`}
+          color={bullishAvg !== null && bullishAvg > 0 ? 'green' : 'red'}
         />
-        <StatCard
-          label="Bullish Avg Return"
-          value={
-            (() => {
-              const b = buckets.find((x) => x.label.startsWith('Bullish') || x.label.startsWith('Strongly Bullish'))
-              const all = buckets.filter((x) => x.min >= 25 && x.n > 0)
-              const totalN = all.reduce((a, b) => a + b.n, 0)
-              if (!totalN) return 'n/a'
-              const w = all.reduce((a, b) => a + b.meanReturn * b.n, 0) / totalN
-              return `${w >= 0 ? '+' : ''}${(w * 100).toFixed(2)}%`
-            })()
-          }
-          hint="When score ≥ +25"
-          color="green"
-        />
-        <StatCard
-          label="Bearish Avg Return"
-          value={
-            (() => {
-              const all = buckets.filter((x) => x.max <= -25 && x.n > 0)
-              const totalN = all.reduce((a, b) => a + b.n, 0)
-              if (!totalN) return 'n/a'
-              const w = all.reduce((a, b) => a + b.meanReturn * b.n, 0) / totalN
-              return `${w >= 0 ? '+' : ''}${(w * 100).toFixed(2)}%`
-            })()
-          }
-          hint="When score ≤ −25"
-          color="red"
+        <PlainStat
+          label="When the score said BEARISH (−25 or lower)"
+          value={bearishAvg !== null ? `${bearishAvg >= 0 ? '+' : ''}${(bearishAvg * 100).toFixed(2)}%` : 'n/a'}
+          hint={`Average price change over the next ${HORIZON_LABELS[horizon].toLowerCase()}`}
+          color={bearishAvg !== null && bearishAvg > 0 ? 'green' : 'red'}
         />
       </div>
 
-      {/* Bucket table */}
+      {/* Bucket table — plain English */}
       <div className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden">
         <div className="px-5 py-4 border-b border-white/5">
           <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
-            Forward Returns by Score Band  ·  {HORIZON_LABELS[horizon]}
+            What happened after each kind of score
           </h2>
           <p className="text-xs text-zinc-500 mt-1">
-            For each composite score band, the average and median realized {HORIZON_LABELS[horizon].toLowerCase()} return.
+            Sorted by how strong the signal was. &ldquo;Times this happened&rdquo; counts every (sector, day)
+            where the score landed in that range.
           </p>
         </div>
-        <table className="w-full text-sm">
-          <thead className="bg-white/[0.02] text-xs text-zinc-500 uppercase tracking-wider">
-            <tr>
-              <th className="text-left  font-medium px-5 py-3">Score Band</th>
-              <th className="text-right font-medium px-5 py-3">N</th>
-              <th className="text-right font-medium px-5 py-3">Mean Return</th>
-              <th className="text-right font-medium px-5 py-3">Median Return</th>
-              <th className="text-right font-medium px-5 py-3">Hit Rate</th>
-            </tr>
-          </thead>
-          <tbody>
-            {buckets.map((b) => {
-              const color =
-                b.meanReturn > 0.005  ? 'text-green-400'  :
-                b.meanReturn < -0.005 ? 'text-red-400'    :
-                                        'text-zinc-300'
-              return (
-                <tr key={b.label} className="border-t border-white/5">
-                  <td className="px-5 py-3 text-zinc-300">{b.label}</td>
-                  <td className="px-5 py-3 text-right tabular-nums text-zinc-400">{b.n.toLocaleString()}</td>
-                  <td className={`px-5 py-3 text-right tabular-nums font-medium ${color}`}>
-                    {b.n ? `${b.meanReturn >= 0 ? '+' : ''}${(b.meanReturn * 100).toFixed(2)}%` : '—'}
-                  </td>
-                  <td className="px-5 py-3 text-right tabular-nums text-zinc-400">
-                    {b.n ? `${b.median >= 0 ? '+' : ''}${(b.median * 100).toFixed(2)}%` : '—'}
-                  </td>
-                  <td className="px-5 py-3 text-right tabular-nums text-zinc-400">
-                    {b.n ? `${(b.hitRate * 100).toFixed(0)}%` : '—'}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-white/[0.02] text-xs text-zinc-500 uppercase tracking-wider">
+              <tr>
+                <th className="text-left  font-medium px-5 py-3">When the score said…</th>
+                <th className="text-right font-medium px-5 py-3">Times this happened</th>
+                <th className="text-right font-medium px-5 py-3">Average price change</th>
+                <th className="text-right font-medium px-5 py-3">Typical price change</th>
+                <th className="text-right font-medium px-5 py-3">% of time price went up</th>
+              </tr>
+            </thead>
+            <tbody>
+              {buckets.map((b) => {
+                const color =
+                  b.meanReturn > 0.005  ? 'text-green-400'  :
+                  b.meanReturn < -0.005 ? 'text-red-400'    :
+                                          'text-zinc-300'
+                return (
+                  <tr key={b.label} className="border-t border-white/5">
+                    <td className="px-5 py-3 text-zinc-300">{b.label}</td>
+                    <td className="px-5 py-3 text-right tabular-nums text-zinc-400">{b.n.toLocaleString()}</td>
+                    <td className={`px-5 py-3 text-right tabular-nums font-medium ${color}`}>
+                      {b.n ? `${b.meanReturn >= 0 ? '+' : ''}${(b.meanReturn * 100).toFixed(2)}%` : '—'}
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums text-zinc-400">
+                      {b.n ? `${b.median >= 0 ? '+' : ''}${(b.median * 100).toFixed(2)}%` : '—'}
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums text-zinc-400">
+                      {b.n ? `${(b.hitRate * 100).toFixed(0)}%` : '—'}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="px-5 py-3 text-xs text-zinc-500 border-t border-white/5">
+          <strong className="text-zinc-300">Reading the table:</strong>
+          {' '}If the model worked, you&rsquo;d see the &ldquo;Average price change&rdquo; column getting more
+          positive as you move down the rows (from bearish to bullish). If the column moves the wrong way,
+          the model has been a contrarian signal.
+        </p>
       </div>
 
       {/* Scatter plot */}
       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
-        <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-2 mb-4">
+        <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-2 mb-1">
           <TrendingUp className="w-4 h-4" />
-          Score vs Forward Return  ·  {HORIZON_LABELS[horizon]}
+          Every observation, plotted
         </h2>
+        <p className="text-xs text-zinc-500 mb-4">
+          Each dot is one sector on one day. Left/right = score that day. Up/down = what the price did
+          over the next {HORIZON_LABELS[horizon].toLowerCase()}. If the model worked, dots should slope
+          from bottom-left to top-right.
+        </p>
         <ScatterPlot pairs={pairs} horizonLabel={HORIZON_LABELS[horizon]} />
       </div>
 
-      {/* Per-sector correlation */}
+      {/* Per-sector */}
       <div className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden">
         <div className="px-5 py-4 border-b border-white/5">
           <h2 className="text-sm font-semibold text-zinc-200">
-            Per-Sector Correlation  ·  {HORIZON_LABELS[horizon]}
+            Did the score work for each sector?
           </h2>
           <p className="text-xs text-zinc-500 mt-1">
-            How well the composite score predicts forward returns within each sector.
+            How much the score and actual price change moved together for each sector, over the next {HORIZON_LABELS[horizon].toLowerCase()}.
+            Green bars = score was helpful. Red bars = score was misleading.
           </p>
         </div>
-        <table className="w-full text-sm">
-          <thead className="bg-white/[0.02] text-xs text-zinc-500 uppercase tracking-wider">
-            <tr>
-              <th className="text-left  font-medium px-5 py-3">Sector</th>
-              <th className="text-right font-medium px-5 py-3">Samples</th>
-              <th className="text-right font-medium px-5 py-3">Correlation</th>
-              <th className="px-5 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {bySector.map((row) => {
-              const c = row.corr
-              const color = c > 0.1 ? 'text-green-400' : c < -0.1 ? 'text-red-400' : 'text-zinc-300'
-              const barWidth = Math.max(2, Math.abs(c) * 200)
-              return (
-                <tr key={row.sector} className="border-t border-white/5">
-                  <td className="px-5 py-3">
-                    <span className="font-mono font-semibold text-white">{row.sector}</span>{' '}
-                    <span className="text-zinc-500">{row.sector_name}</span>
-                  </td>
-                  <td className="px-5 py-3 text-right tabular-nums text-zinc-400">{row.n}</td>
-                  <td className={`px-5 py-3 text-right tabular-nums font-medium ${color}`}>
-                    {c >= 0 ? '+' : ''}{c.toFixed(3)}
-                  </td>
-                  <td className="px-5 py-3 w-48">
-                    <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/30" />
-                      <div
-                        className={`absolute top-0 bottom-0 ${c >= 0 ? 'bg-green-400' : 'bg-red-400'} rounded-sm`}
-                        style={{
-                          left: c >= 0 ? '50%' : `calc(50% - ${barWidth}px)`,
-                          width: `${barWidth}px`,
-                        }}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-white/[0.02] text-xs text-zinc-500 uppercase tracking-wider">
+              <tr>
+                <th className="text-left  font-medium px-5 py-3">Sector</th>
+                <th className="text-right font-medium px-5 py-3">Observations</th>
+                <th className="text-right font-medium px-5 py-3">How well it predicted</th>
+                <th className="px-5 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {bySector.map((row) => {
+                const c = row.corr
+                const color = c > 0.1 ? 'text-green-400' : c < -0.1 ? 'text-red-400' : 'text-zinc-300'
+                const barWidth = Math.max(2, Math.abs(c) * 200)
+                const verdict =
+                  c >  0.2  ? 'Worked well'      :
+                  c >  0.05 ? 'Mildly helpful'   :
+                  c > -0.05 ? 'No real signal'   :
+                  c > -0.2  ? 'Mildly contrarian':
+                              'Backwards'
+                return (
+                  <tr key={row.sector} className="border-t border-white/5">
+                    <td className="px-5 py-3">
+                      <span className="font-mono font-semibold text-white">{row.sector}</span>{' '}
+                      <span className="text-zinc-500">{row.sector_name}</span>
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums text-zinc-400">{row.n}</td>
+                    <td className={`px-5 py-3 text-right text-xs font-medium ${color}`}>
+                      {verdict}
+                    </td>
+                    <td className="px-5 py-3 w-48">
+                      <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/30" />
+                        <div
+                          className={`absolute top-0 bottom-0 ${c >= 0 ? 'bg-green-400' : 'bg-red-400'} rounded-sm`}
+                          style={{
+                            left: c >= 0 ? '50%' : `calc(50% - ${barWidth}px)`,
+                            width: `${barWidth}px`,
+                          }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Disclaimer */}
       <div className="rounded-lg bg-amber-500/5 border border-amber-500/10 p-4 flex gap-3 text-sm text-amber-400/80">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
         <p>
-          Backfilled scores were computed point-in-time (no look-ahead): for each as-of date, the
-          model only sees data available up to that day. Historical Fear/Greed is unavailable so the
-          backfill omits that single feature (coverage ≈ 95%). Past performance is not predictive of future returns.
+          Important caveats: 3 years is a relatively short window — the result you see partly reflects
+          this particular market period. Historical performance does not predict future performance.
+          This is research, not investment advice.
         </p>
       </div>
     </div>
@@ -236,15 +283,14 @@ function Header() {
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-zinc-500 text-sm">
         <BarChart3 className="w-4 h-4" />
-        <span>Backtest</span>
+        <span>Track Record</span>
       </div>
       <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-        Score vs Forward Return
+        Has the score actually predicted prices?
       </h1>
-      <p className="text-zinc-400 text-sm max-w-xl">
-        How well has the composite signal predicted realized sector returns? This view runs the
-        same model on every business day for the past 3 years and compares to actual 1M / 3M /
-        6M / 1Y returns.
+      <p className="text-zinc-400 text-sm max-w-2xl">
+        We re-ran the model on every business day for the past 3 years and compared each score to
+        what the sector&rsquo;s price actually did over the next 1, 3, 6, and 12 months.
       </p>
     </div>
   )
@@ -255,12 +301,12 @@ function EmptyState() {
     <div className="rounded-xl border border-white/5 bg-white/[0.02] py-20 text-center space-y-3">
       <div className="text-4xl">📊</div>
       <p className="text-zinc-400 text-sm">No historical data yet.</p>
-      <p className="text-zinc-600 text-xs">Run the &quot;Backfill Historical Scores&quot; workflow to populate this view.</p>
+      <p className="text-zinc-600 text-xs">Run the &ldquo;Backfill Historical Scores&rdquo; workflow to populate this view.</p>
     </div>
   )
 }
 
-function StatCard({
+function PlainStat({
   label, value, hint, color,
 }: {
   label: string
@@ -270,9 +316,9 @@ function StatCard({
 }) {
   const valueColor = color === 'green' ? 'text-green-400' : color === 'red' ? 'text-red-400' : 'text-zinc-200'
   return (
-    <div className="rounded-lg border border-white/5 bg-white/[0.02] p-4 space-y-1.5">
+    <div className="rounded-lg border border-white/5 bg-white/[0.02] p-5 space-y-1.5">
       <p className="text-xs text-zinc-500 uppercase tracking-wider">{label}</p>
-      <p className={`text-2xl font-bold tabular-nums ${valueColor}`}>{value}</p>
+      <p className={`text-3xl font-bold tabular-nums ${valueColor}`}>{value}</p>
       <p className="text-xs text-zinc-500">{hint}</p>
     </div>
   )
