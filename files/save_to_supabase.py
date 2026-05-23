@@ -63,13 +63,23 @@ def upsert_via_rest(rows: list, supabase_url: str, service_key: str) -> int:
     on (run_date, sector). More reliable than supabase-py 2.30's upsert wrapper.
     """
     base = supabase_url.rstrip("/")
+
+    # URL sanity check (without leaking the full value)
+    print(f"  [diag] base URL length: {len(base)}, scheme/host check: starts={base[:8]}, host_tail={base[-25:]}")
+
     headers = {
         "apikey":        service_key,
         "Authorization": f"Bearer {service_key}",
         "Content-Type":  "application/json",
     }
 
-    # Diagnostic: confirm we can reach the table at all
+    # Diagnostic: confirm we can reach the API root
+    root = requests.get(f"{base}/rest/v1/", headers=headers, timeout=30)
+    print(f"  [diag] GET /rest/v1/ -> {root.status_code}")
+    if not root.ok:
+        print(f"  [diag] body: {root.text[:300]}")
+
+    # Diagnostic: confirm we can reach the table
     diag = requests.get(
         f"{base}/rest/v1/sector_scores?select=run_date&limit=1",
         headers=headers, timeout=30,
@@ -77,6 +87,10 @@ def upsert_via_rest(rows: list, supabase_url: str, service_key: str) -> int:
     print(f"  [diag] GET sector_scores -> {diag.status_code} (body len={len(diag.text)})")
     if not diag.ok:
         print(f"  [diag] body: {diag.text[:300]}")
+        raise RuntimeError(
+            f"Supabase API not reachable at the configured URL. "
+            f"Verify SUPABASE_URL secret looks like https://<project-ref>.supabase.co"
+        )
 
     # Per-row UPSERT: delete existing rows for today, then insert fresh ones.
     # Avoids on_conflict / Prefer header quirks that triggered PGRST125.
