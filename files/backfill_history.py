@@ -184,7 +184,8 @@ def main():
             r = score_at(p_slice, f_slice, sector)
             cat = r["category_scores"]
             fwd = forward_returns(prices, sector, as_of)
-            rows.append({
+            spy_fwd = forward_returns(prices, BENCHMARK, as_of)
+            row = {
                 "as_of_date":     as_of.date().isoformat(),
                 "sector":         sector,
                 "sector_name":    name,
@@ -200,7 +201,15 @@ def main():
                 "fwd_return_6m":  fwd["fwd_return_6m"],
                 "fwd_return_1y":  fwd["fwd_return_1y"],
                 "features":       features_to_jsonb(r["raw_features"]),
-            })
+            }
+            for h in FORWARD_HORIZONS:
+                sector_ret = fwd[h]
+                spy_ret = spy_fwd[h]
+                if sector_ret is not None and spy_ret is not None:
+                    row[f"{h}_excess"] = round(float(sector_ret) - float(spy_ret), 6)
+                else:
+                    row[f"{h}_excess"] = None
+            rows.append(row)
 
         if (i + 1) % 50 == 0 or i == len(sample_dates) - 1:
             print(f"    scored {i+1}/{len(sample_dates)} dates  ({len(rows)} rows)")

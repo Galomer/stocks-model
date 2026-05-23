@@ -30,15 +30,32 @@ export type HistoricalScore = {
   fwd_return_3m: number | null
   fwd_return_6m: number | null
   fwd_return_1y: number | null
+  fwd_return_1m_excess: number | null
+  fwd_return_3m_excess: number | null
+  fwd_return_6m_excess: number | null
+  fwd_return_1y_excess: number | null
 }
 
 export type Horizon = 'fwd_return_1m' | 'fwd_return_3m' | 'fwd_return_6m' | 'fwd_return_1y'
+
+export type ExcessHorizon = 'fwd_return_1m_excess' | 'fwd_return_3m_excess' | 'fwd_return_6m_excess' | 'fwd_return_1y_excess'
+
+export type ReturnHorizon = Horizon | ExcessHorizon
+
+export type ReturnMode = 'absolute' | 'excess'
 
 export const HORIZON_LABELS: Record<Horizon, string> = {
   fwd_return_1m: '1 Month',
   fwd_return_3m: '3 Months',
   fwd_return_6m: '6 Months',
   fwd_return_1y: '1 Year',
+}
+
+export const EXCESS_HORIZON: Record<Horizon, ExcessHorizon> = {
+  fwd_return_1m: 'fwd_return_1m_excess',
+  fwd_return_3m: 'fwd_return_3m_excess',
+  fwd_return_6m: 'fwd_return_6m_excess',
+  fwd_return_1y: 'fwd_return_1y_excess',
 }
 
 export type FeatureDetail = {

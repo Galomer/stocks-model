@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import type { HistoricalScore, Horizon } from '@/lib/types'
+import type { HistoricalScore, Horizon, ReturnMode } from '@/lib/types'
 import { HORIZON_LABELS } from '@/lib/types'
 import { pairsForHorizon, bucketize, pearson, correlationBySector } from '@/lib/analysis'
 import ScatterPlot from '@/components/ScatterPlot'
@@ -12,11 +12,16 @@ const HORIZONS: Horizon[] = ['fwd_return_1m', 'fwd_return_3m', 'fwd_return_6m', 
 
 export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
   const [horizon, setHorizon] = useState<Horizon>('fwd_return_3m')
+  const [returnMode, setReturnMode] = useState<ReturnMode>('excess')
 
-  const pairs    = useMemo(() => pairsForHorizon(rows, horizon), [rows, horizon])
+  const pairs    = useMemo(() => pairsForHorizon(rows, horizon, returnMode), [rows, horizon, returnMode])
   const buckets  = useMemo(() => bucketize(pairs), [pairs])
   const corr     = useMemo(() => pearson(pairs), [pairs])
-  const bySector = useMemo(() => correlationBySector(rows, horizon), [rows, horizon])
+  const bySector = useMemo(() => correlationBySector(rows, horizon, returnMode), [rows, horizon, returnMode])
+
+  const returnLabel = returnMode === 'excess'
+    ? `vs the S&P 500 over the next ${HORIZON_LABELS[horizon].toLowerCase()}`
+    : `over the next ${HORIZON_LABELS[horizon].toLowerCase()}`
 
   const dateRange = useMemo(() => {
     if (!rows.length) return null
@@ -74,8 +79,9 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
           </p>
           <p className="text-zinc-400">
             <span className="font-medium text-zinc-300">A working model</span> would mean high scores led to
-            price increases and low scores led to price decreases. Pick a time horizon below to see how
-            the model actually did across the 2019 bull, COVID crash, 2022 bear and 2023-25 rally.
+            better outcomes than low scores. Because 2019–2026 was mostly a rising market, many sectors went
+            up even when the score was cautious — use &ldquo;vs S&P 500&rdquo; below to see whether the score
+            picked winners, not just up markets.
           </p>
         </div>
       </div>
@@ -89,29 +95,64 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
       )}
 
       {/* Horizon tabs */}
-      <div>
-        <p className="text-xs text-zinc-500 mb-2 inline-flex items-center gap-1.5">
-          Look ahead by
-          <InfoTip
-            what="Choose how far into the future you want to compare. We measure the sector's actual price change over that period after each score."
-            why="Some signals work over weeks, others over months. The model's edge is strongest at the 3 and 6-month horizons."
-            align="start"
-          />:
-        </p>
-        <div className="flex gap-1 p-1 rounded-lg border border-white/5 bg-white/[0.02] w-fit">
-          {HORIZONS.map((h) => (
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs text-zinc-500 mb-2 inline-flex items-center gap-1.5">
+            Look ahead by
+            <InfoTip
+              what="Choose how far into the future you want to compare. We measure the sector's actual price change over that period after each score."
+              why="Some signals work over weeks, others over months. The model's edge is strongest at the 3 and 6-month horizons."
+              align="start"
+            />:
+          </p>
+          <div className="flex gap-1 p-1 rounded-lg border border-white/5 bg-white/[0.02] w-fit">
+            {HORIZONS.map((h) => (
+              <button
+                key={h}
+                onClick={() => setHorizon(h)}
+                className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  horizon === h
+                    ? 'bg-white/10 text-white'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                {HORIZON_LABELS[h]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs text-zinc-500 mb-2 inline-flex items-center gap-1.5">
+            Compare returns
+            <InfoTip
+              what="Absolute = raw sector price change. vs S&P 500 = sector return minus SPY — did this sector beat the broad market?"
+              why="The model is trained to rank sectors (who beats the market), not predict whether prices go up. vs S&P 500 removes the bull-market lift that clusters dots in the top-left."
+              align="start"
+            />:
+          </p>
+          <div className="flex gap-1 p-1 rounded-lg border border-white/5 bg-white/[0.02] w-fit">
             <button
-              key={h}
-              onClick={() => setHorizon(h)}
+              onClick={() => setReturnMode('excess')}
               className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                horizon === h
+                returnMode === 'excess'
                   ? 'bg-white/10 text-white'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              {HORIZON_LABELS[h]}
+              vs S&amp;P 500
             </button>
-          ))}
+            <button
+              onClick={() => setReturnMode('absolute')}
+              className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                returnMode === 'absolute'
+                  ? 'bg-white/10 text-white'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Absolute price change
+            </button>
+          </div>
         </div>
       </div>
 
@@ -130,7 +171,7 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
         <PlainStat
           label={`When the score said BULLISH (+25 or higher)`}
           value={bullishAvg !== null ? `${bullishAvg >= 0 ? '+' : ''}${(bullishAvg * 100).toFixed(2)}%` : 'n/a'}
-          hint={`Average price change over the next ${HORIZON_LABELS[horizon].toLowerCase()}`}
+          hint={`Average return ${returnLabel}`}
           color={bullishAvg !== null && bullishAvg > 0 ? 'green' : 'red'}
           info={{
             what: 'The simple average price change for every (sector, day) where the model gave a Bullish or Strongly Bullish score (+25 to +100).',
@@ -140,7 +181,7 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
         <PlainStat
           label="When the score said BEARISH (−25 or lower)"
           value={bearishAvg !== null ? `${bearishAvg >= 0 ? '+' : ''}${(bearishAvg * 100).toFixed(2)}%` : 'n/a'}
-          hint={`Average price change over the next ${HORIZON_LABELS[horizon].toLowerCase()}`}
+          hint={`Average return ${returnLabel}`}
           color={bearishAvg !== null && bearishAvg > 0 ? 'green' : 'red'}
           info={{
             what: 'The simple average price change for every (sector, day) where the model gave a Bearish or Strongly Bearish score (−25 to −100).',
@@ -257,11 +298,13 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
           Every observation, plotted
         </h2>
         <p className="text-xs text-zinc-500 mb-4">
-          Each dot is one sector on one day. Left/right = score that day. Up/down = what the price did
-          over the next {HORIZON_LABELS[horizon].toLowerCase()}. If the model worked, dots should slope
-          from bottom-left to top-right.
+          Each dot is one sector on one day. Left/right = score that day. Up/down = return {returnLabel}.
+          If the model worked, dots should slope from bottom-left to top-right.
+          {returnMode === 'absolute' && (
+            <> In a rising market, many dots sit above zero even with negative scores — switch to &ldquo;vs S&amp;P 500&rdquo; for a fairer read.</>
+          )}
         </p>
-        <ScatterPlot pairs={pairs} horizonLabel={HORIZON_LABELS[horizon]} />
+        <ScatterPlot pairs={pairs} horizonLabel={returnMode === 'excess' ? `${HORIZON_LABELS[horizon]} vs SPY` : HORIZON_LABELS[horizon]} />
       </div>
 
       {/* Per-sector */}

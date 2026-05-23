@@ -1,12 +1,22 @@
-import type { HistoricalScore, Horizon } from './types'
+import type { HistoricalScore, Horizon, ReturnHorizon, ReturnMode } from './types'
+import { EXCESS_HORIZON } from './types'
 
 export type Pair = { score: number; ret: number; sector: string; date: string }
 
-export function pairsForHorizon(rows: HistoricalScore[], horizon: Horizon): Pair[] {
+export function returnColumn(horizon: Horizon, mode: ReturnMode): ReturnHorizon {
+  return mode === 'excess' ? EXCESS_HORIZON[horizon] : horizon
+}
+
+export function pairsForHorizon(
+  rows: HistoricalScore[],
+  horizon: Horizon,
+  mode: ReturnMode = 'absolute',
+): Pair[] {
+  const col = returnColumn(horizon, mode)
   const out: Pair[] = []
   for (const r of rows) {
     const score = r.composite
-    const ret   = r[horizon] as number | null
+    const ret   = r[col] as number | null
     if (score === null || ret === null) continue
     if (isNaN(score as number) || isNaN(ret as number)) continue
     out.push({ score: Number(score), ret: Number(ret), sector: r.sector, date: r.as_of_date })
@@ -99,10 +109,15 @@ export function meanReturnBySector(rows: HistoricalScore[], horizon: Horizon): R
  * For each sector, correlation between its score and forward return at given horizon.
  * Useful to see which sectors the model predicts best.
  */
-export function correlationBySector(rows: HistoricalScore[], horizon: Horizon): Array<{ sector: string; sector_name: string; corr: number; n: number }> {
+export function correlationBySector(
+  rows: HistoricalScore[],
+  horizon: Horizon,
+  mode: ReturnMode = 'absolute',
+): Array<{ sector: string; sector_name: string; corr: number; n: number }> {
+  const col = returnColumn(horizon, mode)
   const bySector: Record<string, Pair[]> = {}
   for (const r of rows) {
-    const v = r[horizon] as number | null
+    const v = r[col] as number | null
     if (r.composite === null || v === null || isNaN(r.composite as number) || isNaN(v as number)) continue
     if (!bySector[r.sector]) bySector[r.sector] = []
     bySector[r.sector].push({ score: Number(r.composite), ret: Number(v), sector: r.sector, date: r.as_of_date })
