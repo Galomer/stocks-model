@@ -5,6 +5,7 @@ All fetches degrade gracefully: a failed source returns an empty DataFrame or No
 so the rest of the model still runs with reduced feature coverage.
 """
 
+import os
 from typing import Optional, List
 from datetime import datetime, timedelta
 import numpy as np
@@ -64,10 +65,34 @@ _FRED_HEADERS = {
 }
 
 
+def _fetch_fred_api(sid: str, start: str, api_key: str, timeout: int = 20) -> Optional[pd.Series]:
+    """
+    Fetch a single FRED series via the official JSON API.
+    Reliable and fast (~100-300ms per series).
+    """
+    url = "https://api.stlouisfed.org/fred/series/observations"
+    params = {
+        "series_id":         sid,
+        "api_key":           api_key,
+        "file_type":         "json",
+        "observation_start": start,
+    }
+    try:
+        resp = requests.get(url, params=params, timeout=timeout, headers=_FRED_HEADERS)
+        resp.raise_for_status()
+        obs = resp.json().get("observations", [])
+        if not obs:
+            return None
+        idx = pd.to_datetime([o["date"] for o in obs])
+        vals = pd.to_numeric([o["value"] for o in obs], errors="coerce")
+        return pd.Series(vals, index=idx, name=sid)
+    except Exception:
+        return None
+
+
 def _fetch_fred_csv(sid: str, start: str, timeout: int = 25) -> Optional[pd.Series]:
     """
-    Fetch a single FRED series from the public CSV endpoint.
-    Tries two known URL shapes and returns a pandas Series, or None on failure.
+    Fetch a single FRED series from the public CSV endpoint (fallback when no API key).
     """
     from io import StringIO
 
@@ -89,6 +114,14 @@ def _fetch_fred_csv(sid: str, start: str, timeout: int = 25) -> Optional[pd.Seri
     return None
 
 
+def _fetch_fred_one(sid: str, start: str) -> Optional[pd.Series]:
+    """Use the FRED API if an API key is available; otherwise fall back to CSV scraping."""
+    api_key = os.environ.get("FRED_API_KEY")
+    if api_key:
+        return _fetch_fred_api(sid, start, api_key)
+    return _fetch_fred_csv(sid, start)
+
+
 def fetch_fred(days_back: int = LOOKBACK_DAYS, total_budget_sec: int = 90) -> pd.DataFrame:
     """
     Download all FRED macro series in parallel with a hard total-time budget.
@@ -102,7 +135,7 @@ def fetch_fred(days_back: int = LOOKBACK_DAYS, total_budget_sec: int = 90) -> pd
     results = {}
 
     with ThreadPoolExecutor(max_workers=len(series_ids)) as ex:
-        future_to_sid = {ex.submit(_fetch_fred_csv, sid, start): sid for sid in series_ids}
+        future_to_sid = {ex.submit(_fetch_fred_one, sid, start): sid for sid in series_ids}
         try:
             for future in as_completed(future_to_sid, timeout=total_budget_sec):
                 sid = future_to_sid[future]
