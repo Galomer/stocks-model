@@ -6,7 +6,7 @@ import { CATEGORY_INFO, COMPOSITE_INFO } from '@/lib/descriptions'
 import { TrendingUp, Calendar, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
-export const revalidate = 3600 // revalidate at most once per hour
+export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   const [scores, latestDate] = await Promise.all([

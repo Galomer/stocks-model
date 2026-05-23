@@ -1,7 +1,7 @@
 import { getAllHistoricalScores } from '@/lib/supabase'
 import HistoryView from './HistoryView'
 
-export const revalidate = 3600
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Backtest — Sector Model',
