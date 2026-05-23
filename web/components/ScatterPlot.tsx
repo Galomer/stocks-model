@@ -16,21 +16,29 @@ const SECTOR_COLORS: Record<string, string> = {
 
 export default function ScatterPlot({ pairs, horizonLabel }: ScatterPlotProps) {
   const [hover, setHover] = useState<Pair | null>(null)
-  const [highlight, setHighlight] = useState<string | null>(null)
+  const [hoverSector, setHoverSector] = useState<string | null>(null)
+  const [pinnedSector, setPinnedSector] = useState<string | null>(null)
+
+  const activeSector = pinnedSector ?? hoverSector
+
+  const visiblePairs = useMemo(
+    () => (pinnedSector ? pairs.filter((p) => p.sector === pinnedSector) : pairs),
+    [pairs, pinnedSector],
+  )
 
   const { width, height, padding, xScale, yScale, xMin, xMax, yMin, yMax } = useMemo(() => {
     const W = 720, H = 360, P = 36
-    const sx = pairs.map((p) => p.score)
-    const sy = pairs.map((p) => p.ret)
-    const xMin = Math.min(-100, Math.floor(Math.min(...sx, -100)))
-    const xMax = Math.max(100, Math.ceil(Math.max(...sx, 100)))
-    const dy = sy.length ? Math.max(Math.abs(Math.min(...sy)), Math.abs(Math.max(...sy))) : 0.2
+    const sx = visiblePairs.map((p) => p.score)
+    const sy = visiblePairs.map((p) => p.ret)
+    const xMin = Math.min(-100, sx.length ? Math.floor(Math.min(...sx)) : -100)
+    const xMax = Math.max(100, sx.length ? Math.ceil(Math.max(...sx)) : 100)
+    const dy = sy.length ? Math.max(Math.abs(Math.min(...sy)), Math.abs(Math.max(...sy)), 0.02) : 0.2
     const yMin = -dy * 1.1
     const yMax =  dy * 1.1
     const xScale = (v: number) => P + ((v - xMin) / (xMax - xMin)) * (W - 2 * P)
     const yScale = (v: number) => H - P - ((v - yMin) / (yMax - yMin)) * (H - 2 * P)
     return { width: W, height: H, padding: P, xScale, yScale, xMin, xMax, yMin, yMax }
-  }, [pairs])
+  }, [visiblePairs])
 
   if (!pairs.length) {
     return (
@@ -42,15 +50,40 @@ export default function ScatterPlot({ pairs, horizonLabel }: ScatterPlotProps) {
 
   const sectors = Array.from(new Set(pairs.map((p) => p.sector))).sort()
 
+  function togglePin(sector: string) {
+    setPinnedSector((prev) => (prev === sector ? null : sector))
+    setHoverSector(null)
+    setHover(null)
+  }
+
   return (
     <div className="space-y-3">
+      {pinnedSector && (
+        <div className="flex items-center justify-between gap-3 text-xs">
+          <span className="text-zinc-400">
+            Showing only{' '}
+            <span className="font-mono font-semibold" style={{ color: SECTOR_COLORS[pinnedSector] ?? 'white' }}>
+              {pinnedSector}
+            </span>
+            {' '}({visiblePairs.length} points)
+          </span>
+          <button
+            type="button"
+            onClick={() => setPinnedSector(null)}
+            className="text-zinc-400 hover:text-white underline underline-offset-2"
+          >
+            Show all sectors
+          </button>
+        </div>
+      )}
+
       <div className="relative">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-auto"
           onMouseLeave={() => setHover(null)}
         >
-          {/* Quadrant fill (top-right green / bottom-left red — model "right" zones) */}
+          {/* Quadrant fill */}
           <rect
             x={xScale(0)} y={yScale(yMax)}
             width={xScale(xMax) - xScale(0)} height={yScale(0) - yScale(yMax)}
@@ -92,17 +125,17 @@ export default function ScatterPlot({ pairs, horizonLabel }: ScatterPlotProps) {
             Forward Return ({horizonLabel})
           </text>
 
-          {/* Points */}
-          {pairs.map((p, i) => {
-            const dim = highlight && highlight !== p.sector
+          {/* Points — when not pinned, render all with dimming; when pinned, only visiblePairs */}
+          {(pinnedSector ? visiblePairs : pairs).map((p, i) => {
+            const dim = !pinnedSector && activeSector && activeSector !== p.sector
             return (
               <circle
-                key={i}
+                key={`${p.sector}-${p.date}-${i}`}
                 cx={xScale(p.score)}
                 cy={yScale(p.ret)}
-                r={hover === p ? 4.5 : 2.4}
+                r={hover === p ? 4.5 : pinnedSector ? 3 : 2.4}
                 fill={SECTOR_COLORS[p.sector] ?? '#9ca3af'}
-                fillOpacity={dim ? 0.05 : 0.6}
+                fillOpacity={dim ? 0.05 : pinnedSector ? 0.85 : 0.6}
                 stroke={hover === p ? '#fff' : 'none'}
                 strokeWidth={hover === p ? 1.5 : 0}
                 onMouseEnter={() => setHover(p)}
@@ -122,25 +155,42 @@ export default function ScatterPlot({ pairs, horizonLabel }: ScatterPlotProps) {
               Score: <span className="tabular-nums">{hover.score > 0 ? '+' : ''}{hover.score.toFixed(1)}</span>
             </div>
             <div className="text-zinc-300">
-              Return: <span className="tabular-nums">{(hover.ret * 100).toFixed(2)}%</span>
+              Return: <span className="tabular-nums">{hover.ret >= 0 ? '+' : ''}{(hover.ret * 100).toFixed(2)}%</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Sector legend */}
-      <div className="flex flex-wrap gap-2 justify-center pt-2 text-xs">
-        {sectors.map((s) => (
-          <button
-            key={s}
-            onMouseEnter={() => setHighlight(s)}
-            onMouseLeave={() => setHighlight(null)}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-white/10 hover:bg-white/5 transition-colors"
-          >
-            <span className="w-2 h-2 rounded-full" style={{ background: SECTOR_COLORS[s] ?? '#9ca3af' }} />
-            <span className="font-mono text-zinc-300">{s}</span>
-          </button>
-        ))}
+      {/* Sector legend — click to pin, hover to highlight when not pinned */}
+      <p className="text-center text-[11px] text-zinc-600">
+        Hover to highlight · click to pin one sector
+      </p>
+      <div className="flex flex-wrap gap-2 justify-center pt-1 text-xs">
+        {sectors.map((s) => {
+          const isPinned = pinnedSector === s
+          const isActive = activeSector === s
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => togglePin(s)}
+              onMouseEnter={() => { if (!pinnedSector) setHoverSector(s) }}
+              onMouseLeave={() => { if (!pinnedSector) setHoverSector(null) }}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-md border transition-colors ${
+                isPinned
+                  ? 'border-white/30 bg-white/10 text-white'
+                  : isActive
+                    ? 'border-white/20 bg-white/5 text-zinc-200'
+                    : 'border-white/10 hover:bg-white/5 text-zinc-300'
+              }`}
+              aria-pressed={isPinned}
+            >
+              <span className="w-2 h-2 rounded-full" style={{ background: SECTOR_COLORS[s] ?? '#9ca3af' }} />
+              <span className="font-mono">{s}</span>
+              {isPinned && <span className="text-[10px] text-zinc-400">pinned</span>}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

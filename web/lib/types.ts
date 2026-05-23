@@ -34,6 +34,10 @@ export type HistoricalScore = {
   fwd_return_3m_excess: number | null
   fwd_return_6m_excess: number | null
   fwd_return_1y_excess: number | null
+  fwd_spy_return_1m: number | null
+  fwd_spy_return_3m: number | null
+  fwd_spy_return_6m: number | null
+  fwd_spy_return_1y: number | null
 }
 
 export type Horizon = 'fwd_return_1m' | 'fwd_return_3m' | 'fwd_return_6m' | 'fwd_return_1y'
@@ -56,6 +60,13 @@ export const EXCESS_HORIZON: Record<Horizon, ExcessHorizon> = {
   fwd_return_3m: 'fwd_return_3m_excess',
   fwd_return_6m: 'fwd_return_6m_excess',
   fwd_return_1y: 'fwd_return_1y_excess',
+}
+
+export const SPY_HORIZON: Record<Horizon, keyof HistoricalScore> = {
+  fwd_return_1m: 'fwd_spy_return_1m',
+  fwd_return_3m: 'fwd_spy_return_3m',
+  fwd_return_6m: 'fwd_spy_return_6m',
+  fwd_return_1y: 'fwd_spy_return_1y',
 }
 
 export type FeatureDetail = {

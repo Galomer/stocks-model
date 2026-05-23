@@ -55,6 +55,13 @@ FORWARD_HORIZONS = {
     "fwd_return_1y": 252,
 }
 
+SPY_RETURN_KEYS = {
+    "fwd_return_1m": "fwd_spy_return_1m",
+    "fwd_return_3m": "fwd_spy_return_3m",
+    "fwd_return_6m": "fwd_spy_return_6m",
+    "fwd_return_1y": "fwd_spy_return_1y",
+}
+
 
 def score_at(prices_slice: pd.DataFrame, fred_slice: pd.DataFrame, sector: str) -> dict:
     features = {}
@@ -203,8 +210,10 @@ def main():
                 "features":       features_to_jsonb(r["raw_features"]),
             }
             for h in FORWARD_HORIZONS:
+                spy_key = SPY_RETURN_KEYS[h]
                 sector_ret = fwd[h]
                 spy_ret = spy_fwd[h]
+                row[spy_key] = spy_ret
                 if sector_ret is not None and spy_ret is not None:
                     row[f"{h}_excess"] = round(float(sector_ret) - float(spy_ret), 6)
                 else:

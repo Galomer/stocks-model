@@ -162,7 +162,9 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
         verdict.tone === 'red'   ? 'border-red-500/20   bg-red-500/[0.05]'   :
                                    'border-white/10    bg-white/[0.02]'
       }`}>
-        <p className="text-xs uppercase tracking-wider text-zinc-500 mb-1">The verdict ({HORIZON_LABELS[horizon]})</p>
+        <p className="text-xs uppercase tracking-wider text-zinc-500 mb-1">
+          The verdict ({HORIZON_LABELS[horizon]}{returnMode === 'excess' ? ', vs S&P 500' : ''})
+        </p>
         <p className="text-base text-white">{verdict.text}</p>
       </div>
 

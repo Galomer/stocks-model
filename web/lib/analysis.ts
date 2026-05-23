@@ -1,10 +1,53 @@
 import type { HistoricalScore, Horizon, ReturnHorizon, ReturnMode } from './types'
-import { EXCESS_HORIZON } from './types'
+import { EXCESS_HORIZON, SPY_HORIZON } from './types'
 
 export type Pair = { score: number; ret: number; sector: string; date: string }
 
+const ALL_HORIZONS: Horizon[] = ['fwd_return_1m', 'fwd_return_3m', 'fwd_return_6m', 'fwd_return_1y']
+
 export function returnColumn(horizon: Horizon, mode: ReturnMode): ReturnHorizon {
   return mode === 'excess' ? EXCESS_HORIZON[horizon] : horizon
+}
+
+/** Infer SPY forward return per date from rows that already have excess populated. */
+function buildSpyReturnsByDate(rows: HistoricalScore[]): Map<string, Partial<Record<Horizon, number>>> {
+  const byDate = new Map<string, Partial<Record<Horizon, number>>>()
+  for (const r of rows) {
+    for (const h of ALL_HORIZONS) {
+      const abs = r[h] as number | null
+      const exc = r[EXCESS_HORIZON[h]] as number | null
+      if (abs === null || exc === null || isNaN(abs as number) || isNaN(exc as number)) continue
+      const spy = Number(abs) - Number(exc)
+      const bucket = byDate.get(r.as_of_date) ?? {}
+      if (bucket[h] === undefined) bucket[h] = spy
+      byDate.set(r.as_of_date, bucket)
+    }
+  }
+  return byDate
+}
+
+function resolveReturn(
+  row: HistoricalScore,
+  horizon: Horizon,
+  mode: ReturnMode,
+  spyByDate: Map<string, Partial<Record<Horizon, number>>>,
+): number | null {
+  if (mode === 'absolute') {
+    const v = row[horizon] as number | null
+    if (v === null || isNaN(v as number)) return null
+    return Number(v)
+  }
+
+  const stored = row[EXCESS_HORIZON[horizon]] as number | null
+  if (stored !== null && !isNaN(stored as number)) return Number(stored)
+
+  const abs = row[horizon] as number | null
+  const spyStored = row[SPY_HORIZON[horizon]] as number | null
+  const spy = spyStored !== null && !isNaN(spyStored as number)
+    ? Number(spyStored)
+    : spyByDate.get(row.as_of_date)?.[horizon]
+  if (abs === null || spy === undefined || isNaN(abs as number)) return null
+  return Number(abs) - spy
 }
 
 export function pairsForHorizon(
@@ -12,16 +55,22 @@ export function pairsForHorizon(
   horizon: Horizon,
   mode: ReturnMode = 'absolute',
 ): Pair[] {
-  const col = returnColumn(horizon, mode)
+  const spyByDate = mode === 'excess' ? buildSpyReturnsByDate(rows) : null
   const out: Pair[] = []
   for (const r of rows) {
     const score = r.composite
-    const ret   = r[col] as number | null
+    const ret = resolveReturn(r, horizon, mode, spyByDate ?? new Map())
     if (score === null || ret === null) continue
-    if (isNaN(score as number) || isNaN(ret as number)) continue
-    out.push({ score: Number(score), ret: Number(ret), sector: r.sector, date: r.as_of_date })
+    if (isNaN(score as number) || isNaN(ret)) continue
+    out.push({ score: Number(score), ret, sector: r.sector, date: r.as_of_date })
   }
   return out
+}
+
+export function excessCoverage(rows: HistoricalScore[], horizon: Horizon): { usable: number; total: number } {
+  const pairs = pairsForHorizon(rows, horizon, 'excess')
+  const absPairs = pairsForHorizon(rows, horizon, 'absolute')
+  return { usable: pairs.length, total: absPairs.length }
 }
 
 export type Bucket = {
@@ -114,13 +163,13 @@ export function correlationBySector(
   horizon: Horizon,
   mode: ReturnMode = 'absolute',
 ): Array<{ sector: string; sector_name: string; corr: number; n: number }> {
-  const col = returnColumn(horizon, mode)
+  const spyByDate = mode === 'excess' ? buildSpyReturnsByDate(rows) : new Map()
   const bySector: Record<string, Pair[]> = {}
   for (const r of rows) {
-    const v = r[col] as number | null
-    if (r.composite === null || v === null || isNaN(r.composite as number) || isNaN(v as number)) continue
+    const v = resolveReturn(r, horizon, mode, spyByDate)
+    if (r.composite === null || v === null || isNaN(r.composite as number)) continue
     if (!bySector[r.sector]) bySector[r.sector] = []
-    bySector[r.sector].push({ score: Number(r.composite), ret: Number(v), sector: r.sector, date: r.as_of_date })
+    bySector[r.sector].push({ score: Number(r.composite), ret: v, sector: r.sector, date: r.as_of_date })
   }
   return Object.entries(bySector)
     .map(([sector, pairs]) => ({
