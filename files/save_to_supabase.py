@@ -63,18 +63,36 @@ def upsert_via_rest(rows: list, supabase_url: str, service_key: str) -> int:
     on (run_date, sector). More reliable than supabase-py 2.30's upsert wrapper.
     """
     base = supabase_url.rstrip("/")
-    url = f"{base}/rest/v1/sector_scores?on_conflict=run_date%2Csector"
     headers = {
-        "apikey":         service_key,
-        "Authorization":  f"Bearer {service_key}",
-        "Content-Type":   "application/json",
-        "Prefer":         "resolution=merge-duplicates,return=representation",
+        "apikey":        service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Content-Type":  "application/json",
     }
-    print(f"  POST {url}")
-    print(f"  apikey length: {len(service_key)}, starts with: {service_key[:8]}...")
-    resp = requests.post(url, json=rows, headers=headers, timeout=30)
+
+    # Diagnostic: confirm we can reach the table at all
+    diag = requests.get(
+        f"{base}/rest/v1/sector_scores?select=run_date&limit=1",
+        headers=headers, timeout=30,
+    )
+    print(f"  [diag] GET sector_scores -> {diag.status_code} (body len={len(diag.text)})")
+    if not diag.ok:
+        print(f"  [diag] body: {diag.text[:300]}")
+
+    # Per-row UPSERT: delete existing rows for today, then insert fresh ones.
+    # Avoids on_conflict / Prefer header quirks that triggered PGRST125.
+    run_dates = sorted({r["run_date"] for r in rows})
+    for d in run_dates:
+        del_url = f"{base}/rest/v1/sector_scores?run_date=eq.{d}"
+        d_resp = requests.delete(del_url, headers=headers, timeout=30)
+        print(f"  [delete] {d}: {d_resp.status_code}")
+        if not d_resp.ok and d_resp.status_code not in (200, 204):
+            raise RuntimeError(f"Supabase delete failed [{d_resp.status_code}]: {d_resp.text}")
+
+    insert_url = f"{base}/rest/v1/sector_scores"
+    ins_headers = {**headers, "Prefer": "return=representation"}
+    resp = requests.post(insert_url, json=rows, headers=ins_headers, timeout=30)
     if not resp.ok:
-        raise RuntimeError(f"Supabase upsert failed [{resp.status_code}]: {resp.text}")
+        raise RuntimeError(f"Supabase insert failed [{resp.status_code}]: {resp.text}")
     return len(resp.json())
 
 
