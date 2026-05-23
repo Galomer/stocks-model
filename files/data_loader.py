@@ -55,33 +55,58 @@ def fetch_prices(tickers: List[str], days_back: int = LOOKBACK_DAYS) -> pd.DataF
 
 # ── Macro (FRED) ──────────────────────────────────────────────────────────
 
+def _fetch_fred_csv(sid: str, start: str, attempts: int = 3, timeout: int = 45) -> Optional[pd.Series]:
+    """
+    Fetch a single FRED series from the public CSV endpoint with retries.
+    Returns a pandas Series indexed by date, or None on failure.
+    """
+    from io import StringIO
+    import time
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+        ),
+        "Accept": "text/csv,*/*",
+    }
+    urls = [
+        f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}&cosd={start}",
+        f"https://fred.stlouisfed.org/series/{sid}/downloaddata/{sid}.csv",
+    ]
+
+    for attempt in range(attempts):
+        for url in urls:
+            try:
+                resp = requests.get(url, timeout=timeout, headers=headers)
+                resp.raise_for_status()
+                df_s = pd.read_csv(StringIO(resp.text), parse_dates=[0], index_col=0)
+                df_s.columns = [sid]
+                df_s = df_s.replace(".", float("nan"))
+                df_s[sid] = pd.to_numeric(df_s[sid], errors="coerce")
+                return df_s[sid]
+            except Exception as e:
+                last_err = e
+                continue
+        time.sleep(2 * (attempt + 1))
+
+    print(f"  [warn] FRED series {sid} unavailable after {attempts} attempts: {last_err}")
+    return None
+
+
 def fetch_fred(days_back: int = LOOKBACK_DAYS) -> pd.DataFrame:
     """
-    Download macro series directly from the FRED CSV endpoint.
-    No API key required. Each series is fetched individually; failures are
-    silently dropped so the model still runs with reduced coverage.
+    Download macro series directly from the FRED CSV endpoint with retries.
+    No API key required. Failed series are silently dropped so the model still
+    runs with reduced coverage.
     """
     start = _start_date(days_back)
     results = {}
 
     for sid in FRED_SERIES:
-        url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}&vintage_date="
-        # Use the observation endpoint which supports a start date filter
-        obs_url = (
-            f"https://fred.stlouisfed.org/graph/fredgraph.csv"
-            f"?id={sid}&cosd={start}"
-        )
-        try:
-            resp = requests.get(obs_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
-            resp.raise_for_status()
-            from io import StringIO
-            df_s = pd.read_csv(StringIO(resp.text), parse_dates=[0], index_col=0)
-            df_s.columns = [sid]
-            df_s = df_s.replace(".", float("nan")).infer_objects()
-            df_s[sid] = pd.to_numeric(df_s[sid], errors="coerce")
-            results[sid] = df_s[sid]
-        except Exception as e:
-            print(f"  [warn] FRED series {sid} unavailable: {e}")
+        s = _fetch_fred_csv(sid, start)
+        if s is not None:
+            results[sid] = s
 
     if not results:
         return pd.DataFrame()

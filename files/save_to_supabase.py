@@ -110,9 +110,10 @@ def main():
         rows.append(row)
         print(f"  {sector:<5s} {sector_name:<30s} composite={row['composite']}")
 
-    print(f"\n  Upserting {len(rows)} rows to Supabase ...")
-    resp = sb.table("sector_scores").upsert(rows, on_conflict="run_date,sector").execute()
-    print(f"  Done. {len(resp.data)} rows written.")
+    print(f"\n  Writing {len(rows)} rows to Supabase ...")
+    sb.table("sector_scores").delete().eq("run_date", run_date).execute()
+    resp = sb.table("sector_scores").insert(rows).execute()
+    print(f"  Done. {len(resp.data)} rows written for {run_date}.")
 
 
 if __name__ == "__main__":
