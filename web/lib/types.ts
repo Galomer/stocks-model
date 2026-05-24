@@ -84,7 +84,7 @@ export const CATEGORY_LABELS: Record<CategoryKey, string> = {
   momentum: 'Momentum',
   macro: 'Macro & Rates',
   sentiment: 'Sentiment',
-  regime: 'Regime',
+  regime: 'Market Breadth',
 }
 
 export const SECTOR_DESCRIPTIONS: Record<string, string> = {

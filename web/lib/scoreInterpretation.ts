@@ -42,11 +42,11 @@ export function interpretCategoryScore(cat: CategoryKey, score: number | null): 
     },
     regime: {
       negative:
-        'Broad market participation looks thin, or recent “risk-on” leadership may be due to reverse over the next 1–3 months.',
+        'Participation looks narrow, or recent “risk-on” leadership may be due to reverse over the next 1–3 months.',
       positive:
         'Market breadth and risk appetite look healthy — a supportive backdrop for this sector ahead.',
       neutral:
-        'Market-regime signals are mixed.',
+        'Market breadth signals are mixed.',
     },
   }
 

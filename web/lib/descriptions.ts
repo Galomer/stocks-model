@@ -17,7 +17,7 @@ export const CATEGORY_INFO: Record<string, { what: string; why: string }> = {
     why:  'Low fear / high complacency often reads negative — calm markets can precede pullbacks. Spikes in fear often read positive because they have historically been followed by recoveries.',
   },
   regime: {
-    what: 'Cross-sector context: cyclical vs defensive leadership, how many sectors are above their 50-DMA, and correlation with the broad market.',
+    what: 'How broad the rally is: cyclical vs defensive leadership, how many sectors are above their 50-day average, and correlation with the broad market.',
     why:  'When “everything looks great” (broad participation, cyclicals leading), the model often reads that as stretched and flags less upside ahead — even while prices are still rising.',
   },
 }
@@ -117,7 +117,7 @@ export const FEATURE_INFO: Record<string, { what: string; why: string }> = {
   },
   breadth_above_50dma: {
     what: 'The percentage of the 11 SPDR sector ETFs currently trading above their own 50-day moving average.',
-    why:  'A market-wide regime gauge. When almost every sector is above its 50-DMA, the rally can look “too easy” — the model often treats that as stretched and flags less upside ahead over the next 1–3 months.',
+    why:  'A market-wide breadth gauge. When almost every sector is above its 50-DMA, the rally can look “too easy” — the model often treats that as stretched and flags less upside ahead over the next 1–3 months.',
   },
 }
 

@@ -118,7 +118,7 @@ export default async function HomePage() {
                   momentum:  'Forward view on price stretch — negative often means “strong run, pullback risk ahead”',
                   macro:     'Rates, credit & dollar — supportive or headwind ahead?',
                   sentiment: 'Fear vs complacency — low fear can read negative forward',
-                  regime:    'Market breadth & risk appetite — “too easy” can read negative',
+                  regime:    'How many sectors are participating — “everyone winning” can read negative forward',
                 }
                 const info = CATEGORY_INFO[cat]
                 return (

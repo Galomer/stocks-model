@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'Quantitative sector direction scores across all 11 SPDR sector ETFs.',
   openGraph: {
     title: 'Sector Direction Model',
-    description: 'Daily composite scores for US equity sectors — momentum, macro, sentiment & regime.',
+    description: 'Daily composite scores for US equity sectors — momentum, macro, sentiment & market breadth.',
     url: 'https://stocks.galomer.com',
     siteName: 'galomer.com',
   },

@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props) {
   if (!name) return {}
   return {
     title: `${sector.toUpperCase()} — ${name} | Sector Model`,
-    description: `Composite direction score for ${name} (${sector.toUpperCase()}) — momentum, macro, sentiment & regime breakdown.`,
+    description: `Composite direction score for ${name} (${sector.toUpperCase()}) — momentum, macro, sentiment & market breadth breakdown.`,
   }
 }
 
