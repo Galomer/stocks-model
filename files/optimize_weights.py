@@ -81,7 +81,7 @@ def pearson(xs: List[float], ys: List[float]) -> float:
         ey = y - my
         num += ex * ey
         dx += ex * ex
-        dy += ey * dy
+        dy += ey * ey
     denom = (dx * dy) ** 0.5
     return num / denom if denom else 0.0
 
