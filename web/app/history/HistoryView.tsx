@@ -321,8 +321,8 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
             />
           </h2>
           <p className="text-xs text-zinc-500 mt-1">
-            How much the score and actual price change moved together for each sector, over the next {HORIZON_LABELS[horizon].toLowerCase()}.
-            Green bars = score was helpful. Red bars = score was misleading.
+            How much the score and actual return moved together for each sector, over the next {HORIZON_LABELS[horizon].toLowerCase()}.
+            R² shows what fraction of return variation the score explained. Green bars = score was helpful. Red bars = score was misleading.
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -331,6 +331,16 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
               <tr>
                 <th className="text-left  font-medium px-5 py-3">Sector</th>
                 <th className="text-right font-medium px-5 py-3">Observations</th>
+                <th className="text-right font-medium px-5 py-3">
+                  <span className="inline-flex items-center gap-1.5 justify-end">
+                    R²
+                    <InfoTip
+                      what="R-squared: the share of forward return variation that the score explains for this sector. 4% means the score accounted for about 4% of the ups and downs — the rest was noise or other factors."
+                      why="Correlation tells you direction and strength together; R² is easier to read as “how much did the model actually explain?”"
+                      align="end"
+                    />
+                  </span>
+                </th>
                 <th className="text-right font-medium px-5 py-3">
                   <span className="inline-flex items-center gap-1.5 justify-end">
                     How well it predicted
@@ -347,7 +357,9 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
             <tbody>
               {bySector.map((row) => {
                 const c = row.corr
+                const r2 = row.r2
                 const color = c > 0.1 ? 'text-green-400' : c < -0.1 ? 'text-red-400' : 'text-zinc-300'
+                const r2Color = r2 >= 0.04 ? 'text-green-400' : r2 >= 0.01 ? 'text-zinc-300' : 'text-zinc-500'
                 const barWidth = Math.max(2, Math.abs(c) * 200)
                 const verdict =
                   c >  0.2  ? 'Worked well'      :
@@ -362,6 +374,9 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
                       <span className="text-zinc-500">{row.sector_name}</span>
                     </td>
                     <td className="px-5 py-3 text-right tabular-nums text-zinc-400">{row.n}</td>
+                    <td className={`px-5 py-3 text-right tabular-nums text-sm font-medium ${r2Color}`}>
+                      {(r2 * 100).toFixed(1)}%
+                    </td>
                     <td className={`px-5 py-3 text-right text-xs font-medium ${color}`}>
                       {verdict}
                     </td>

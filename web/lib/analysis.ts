@@ -132,6 +132,20 @@ export function pearson(pairs: Pair[]): number {
   return denom === 0 ? 0 : num / denom
 }
 
+/** R² for score → forward return (share of return variance explained by the score). */
+export function rSquared(pairs: Pair[]): number {
+  const r = pearson(pairs)
+  return r * r
+}
+
+export type SectorBacktestStats = {
+  sector: string
+  sector_name: string
+  corr: number
+  r2: number
+  n: number
+}
+
 /** Mean forward return per sector for a given horizon. */
 export function meanReturnBySector(rows: HistoricalScore[], horizon: Horizon): Record<string, { sector: string; sector_name: string; mean: number; n: number }> {
   const acc: Record<string, { sector_name: string; total: number; n: number }> = {}
@@ -162,7 +176,7 @@ export function correlationBySector(
   rows: HistoricalScore[],
   horizon: Horizon,
   mode: ReturnMode = 'absolute',
-): Array<{ sector: string; sector_name: string; corr: number; n: number }> {
+): SectorBacktestStats[] {
   const spyByDate = mode === 'excess' ? buildSpyReturnsByDate(rows) : new Map()
   const bySector: Record<string, Pair[]> = {}
   for (const r of rows) {
@@ -176,6 +190,7 @@ export function correlationBySector(
       sector,
       sector_name: pairs[0]?.sector,
       corr: pearson(pairs),
+      r2: rSquared(pairs),
       n: pairs.length,
     }))
     .map((row) => ({
