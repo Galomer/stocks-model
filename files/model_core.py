@@ -20,12 +20,49 @@ if _LW_PATH.exists():
     except Exception:
         _LEARNED = {}
 
-LEARNED_SIGNS: dict = _LEARNED.get("signs", {})
-LEARNED_WEIGHTS: dict = _LEARNED.get("weights", {})
-CALIBRATION: dict = _LEARNED.get(
+PREDICTION_HORIZONS = ("fwd_return_1m", "fwd_return_3m")
+DEFAULT_PREDICTION_HORIZON = "fwd_return_3m"
+
+# Legacy top-level bundle (v2 blend) — used as fallback for 3m when by_horizon missing.
+_LEGACY_WEIGHTS: dict = _LEARNED.get("weights", {})
+_LEGACY_SIGNS: dict = _LEARNED.get("signs", {})
+_LEGACY_CALIBRATION: dict = _LEARNED.get(
     "calibration",
-    {"slope": 1.0, "intercept": 0.0, "raw_mean": 0.0},
+    {"raw_mean": 0.0, "raw_std": 1.0, "target_std": 30.0},
 )
+
+_BY_HORIZON: dict = _LEARNED.get("by_horizon") or {}
+
+
+def _legacy_bundle() -> dict:
+    return {
+        "weights": _LEGACY_WEIGHTS,
+        "signs": _LEGACY_SIGNS,
+        "calibration": _LEGACY_CALIBRATION,
+    }
+
+
+def get_horizon_bundle(horizon: str) -> dict:
+    """Return {weights, signs, calibration, composite_stats?} for a prediction horizon."""
+    if horizon in _BY_HORIZON:
+        bundle = _BY_HORIZON[horizon]
+        return {
+            "weights": bundle.get("weights", {}),
+            "signs": bundle.get("signs", {}),
+            "calibration": bundle.get("calibration", _LEGACY_CALIBRATION),
+            "composite_stats": bundle.get("composite_stats"),
+        }
+    # Legacy v2 file: single blended bundle — use for 3m; fallback for 1m until relearned.
+    if _LEGACY_WEIGHTS:
+        return _legacy_bundle()
+    return {"weights": {}, "signs": {}, "calibration": _LEGACY_CALIBRATION}
+
+
+# Default horizon config (backward compatible exports).
+_default = get_horizon_bundle(DEFAULT_PREDICTION_HORIZON)
+LEARNED_SIGNS: dict = _default.get("signs", {})
+LEARNED_WEIGHTS: dict = _default.get("weights", {})
+CALIBRATION: dict = _default.get("calibration", _LEGACY_CALIBRATION)
 
 FEATURE_CATEGORY: dict = {
     "price_vs_50dma":            "momentum",
@@ -55,8 +92,6 @@ FEATURE_CATEGORY: dict = {
 }
 
 CATEGORY_ORDER = ["momentum", "macro", "sentiment", "regime"]
-
-# Prevent one category (usually mean-reversion momentum) from dominating the composite.
 CATEGORY_WEIGHT_CAP = 0.38
 
 
@@ -69,12 +104,25 @@ def raw_composite_from_features(
     weights: Optional[dict] = None,
     signs: Optional[dict] = None,
     use_learned: Optional[bool] = None,
+    horizon: Optional[str] = None,
 ) -> Optional[float]:
     """Weighted average of signed feature scores, scaled to [-100, 100] before calibration."""
+    bundle = get_horizon_bundle(horizon) if horizon else {}
     if use_learned is None:
-        use_learned = bool(LEARNED_WEIGHTS)
-    effective_weights = LEARNED_WEIGHTS if (use_learned and weights is None) else (weights or FEATURE_WEIGHTS)
-    effective_signs = LEARNED_SIGNS if (use_learned and signs is None) else (signs or {})
+        use_learned = bool(bundle.get("weights") or LEARNED_WEIGHTS)
+
+    if weights is not None:
+        effective_weights = weights
+        effective_signs = signs or {}
+    elif horizon and bundle.get("weights"):
+        effective_weights = bundle["weights"]
+        effective_signs = bundle.get("signs", {})
+    elif use_learned and LEARNED_WEIGHTS:
+        effective_weights = LEARNED_WEIGHTS
+        effective_signs = LEARNED_SIGNS
+    else:
+        effective_weights = FEATURE_WEIGHTS
+        effective_signs = signs or {}
 
     total_weight = 0.0
     weighted_sum = 0.0
@@ -96,7 +144,6 @@ def apply_calibration(raw_composite: float, calibration: Optional[dict] = None) 
     """Center and rescale raw composite to a readable [-100, 100] score."""
     cal = calibration or CALIBRATION
 
-    # Display calibration (version 2+): z-score then scale.
     if cal.get("target_std") is not None:
         raw_mean = float(cal.get("raw_mean", 0.0))
         raw_std = float(cal.get("raw_std", 1.0))
@@ -106,13 +153,10 @@ def apply_calibration(raw_composite: float, calibration: Optional[dict] = None) 
         z = (raw_composite - raw_mean) / raw_std
         return float(np.clip(z * target_std, -100.0, 100.0))
 
-    # Legacy misfit: slope/intercept were regressing excess *returns* (~0.01 scale)
-    # onto raw scores (~±30). That mapped every sector to ~0. Ignore and use raw.
     slope = float(cal.get("slope", 1.0))
     if abs(slope) < 0.05:
         return float(np.clip(raw_composite, -100.0, 100.0))
 
-    # Older affine format (score space) — kept for compatibility.
     raw_mean = float(cal.get("raw_mean", 0.0))
     intercept = float(cal.get("intercept", 0.0))
     centered = raw_composite - raw_mean
@@ -126,10 +170,15 @@ def composite_from_features(
     signs: Optional[dict] = None,
     calibration: Optional[dict] = None,
     use_learned: Optional[bool] = None,
+    horizon: Optional[str] = None,
 ) -> Optional[float]:
-    raw = raw_composite_from_features(features, weights, signs, use_learned=use_learned)
+    bundle = get_horizon_bundle(horizon) if horizon else {}
+    cal = calibration or bundle.get("calibration") or CALIBRATION
+    raw = raw_composite_from_features(
+        features, weights, signs, use_learned=use_learned, horizon=horizon
+    )
     if raw is None:
         return None
     if use_learned is False:
         return float(np.clip(raw, -100.0, 100.0))
-    return apply_calibration(raw, calibration)
+    return apply_calibration(raw, cal)

@@ -4,6 +4,8 @@ export type SectorScore = {
   sector: string
   sector_name: string
   composite: number | null
+  composite_1m: number | null
+  composite_3m: number | null
   momentum: number | null
   macro: number | null
   sentiment: number | null
@@ -20,6 +22,8 @@ export type HistoricalScore = {
   sector: string
   sector_name: string
   composite: number | null
+  composite_1m: number | null
+  composite_3m: number | null
   momentum: number | null
   macro: number | null
   sentiment: number | null
@@ -47,6 +51,48 @@ export type ExcessHorizon = 'fwd_return_1m_excess' | 'fwd_return_3m_excess' | 'f
 export type ReturnHorizon = Horizon | ExcessHorizon
 
 export type ReturnMode = 'absolute' | 'excess'
+
+/** Live prediction horizons (separate learned models). */
+export type PredictionHorizon = 'fwd_return_1m' | 'fwd_return_3m'
+
+export const PREDICTION_HORIZONS: PredictionHorizon[] = ['fwd_return_1m', 'fwd_return_3m']
+
+export const PREDICTION_HORIZON_LABELS: Record<PredictionHorizon, string> = {
+  fwd_return_1m: '1 Month',
+  fwd_return_3m: '3 Months',
+}
+
+export function parsePredictionHorizon(v: string | undefined | null): PredictionHorizon {
+  if (v === '1m' || v === 'fwd_return_1m') return 'fwd_return_1m'
+  return 'fwd_return_3m'
+}
+
+export function predictionHorizonParam(h: PredictionHorizon): string {
+  return h === 'fwd_return_1m' ? '1m' : '3m'
+}
+
+export function compositeForPrediction(
+  row: Pick<SectorScore, 'composite' | 'composite_1m' | 'composite_3m'>,
+  horizon: PredictionHorizon,
+): number | null {
+  if (horizon === 'fwd_return_1m') {
+    const v = row.composite_1m ?? row.composite
+    return v !== null && !isNaN(v as number) ? Number(v) : null
+  }
+  const v = row.composite_3m ?? row.composite
+  return v !== null && !isNaN(v as number) ? Number(v) : null
+}
+
+/** Match backtest score column to the return horizon being evaluated. */
+export function predictionScoreForReturnHorizon(
+  row: Pick<HistoricalScore, 'composite' | 'composite_1m' | 'composite_3m'>,
+  returnHorizon: Horizon,
+): number | null {
+  if (returnHorizon === 'fwd_return_1m') {
+    return compositeForPrediction(row, 'fwd_return_1m')
+  }
+  return compositeForPrediction(row, 'fwd_return_3m')
+}
 
 export const HORIZON_LABELS: Record<Horizon, string> = {
   fwd_return_1m: '1 Month',

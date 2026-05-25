@@ -136,8 +136,8 @@ export function getFeatureInfo(name: string): { what: string; why: string } {
 }
 
 export const COMPOSITE_INFO = {
-  what: 'A single number from -100 (very bearish) to +100 (very bullish) combining 23 features into one score. Weights and signs are learned from history; features whose predictive sign flips between regimes are dropped entirely.',
-  why:  'A composite reduces noise — no single signal is perfect, but combining many gives a more robust read on direction. Trained on weekly observations going back to 2019, blending 1-month and 3-month forward-return correlations.',
+  what: 'A single number from −100 (very bearish) to +100 (very bullish) combining many features into one score. Separate models are trained for 1-month and 3-month forward horizons — pick the period that matches your holding timeframe.',
+  why:  'Weights and signs are learned from weekly backtests since 2019. The 1-month and 3-month scores can rank sectors differently.',
 }
 
 export const COVERAGE_INFO = {

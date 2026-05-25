@@ -17,6 +17,8 @@ function normalizeSectorScore(row: Record<string, unknown>): SectorScore {
   return {
     ...base,
     composite: toNum(row.composite),
+    composite_1m: toNum(row.composite_1m),
+    composite_3m: toNum(row.composite_3m),
     momentum: toNum(row.momentum),
     macro: toNum(row.macro),
     sentiment: toNum(row.sentiment),
@@ -31,6 +33,8 @@ function normalizeHistoricalScore(row: Record<string, unknown>): HistoricalScore
   return {
     ...base,
     composite: toNum(row.composite),
+    composite_1m: toNum(row.composite_1m),
+    composite_3m: toNum(row.composite_3m),
     momentum: toNum(row.momentum),
     macro: toNum(row.macro),
     sentiment: toNum(row.sentiment),
@@ -94,7 +98,7 @@ export async function getSectorScore(sector: string, runDate?: string): Promise<
 export async function getHistoricalScores(sector: string, limit = 90): Promise<SectorScore[]> {
   const { data } = await supabase
     .from('sector_scores')
-    .select('run_date, composite, momentum, macro, sentiment, regime')
+    .select('run_date, composite, composite_1m, composite_3m, momentum, macro, sentiment, regime')
     .eq('sector', sector)
     .order('run_date', { ascending: false })
     .limit(limit)
@@ -109,7 +113,7 @@ export async function getAllHistoricalScores(): Promise<HistoricalScore[]> {
   while (true) {
     const { data, error } = await supabase
       .from('historical_scores')
-      .select('as_of_date, sector, sector_name, composite, momentum, macro, sentiment, regime, fwd_return_1m, fwd_return_3m, fwd_return_6m, fwd_return_1y, fwd_return_1m_excess, fwd_return_3m_excess, fwd_return_6m_excess, fwd_return_1y_excess, fwd_spy_return_1m, fwd_spy_return_3m, fwd_spy_return_6m, fwd_spy_return_1y')
+      .select('as_of_date, sector, sector_name, composite, composite_1m, composite_3m, momentum, macro, sentiment, regime, fwd_return_1m, fwd_return_3m, fwd_return_6m, fwd_return_1y, fwd_return_1m_excess, fwd_return_3m_excess, fwd_return_6m_excess, fwd_return_1y_excess, fwd_spy_return_1m, fwd_spy_return_3m, fwd_spy_return_6m, fwd_spy_return_1y')
       .order('as_of_date', { ascending: true })
       .range(offset, offset + pageSize - 1)
     if (error) {

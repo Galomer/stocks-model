@@ -79,9 +79,9 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
           </p>
           <p className="text-zinc-400">
             <span className="font-medium text-zinc-300">A working model</span> would mean high scores led to
-            better outcomes than low scores. Because 2019–2026 was mostly a rising market, many sectors went
-            up even when the score was cautious — use &ldquo;vs S&P 500&rdquo; below to see whether the score
-            picked winners, not just up markets.
+            better outcomes than low scores. For 1-month and 3-month backtests, each uses its own trained
+            prediction score. Because 2019–2026 was mostly a rising market, use &ldquo;vs S&P 500&rdquo; below
+            to see whether the score picked winners, not just up markets.
           </p>
         </div>
       </div>

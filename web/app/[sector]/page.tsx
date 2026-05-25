@@ -1,9 +1,19 @@
 import { getSectorScore, getHistoricalScores, getLatestRunDate } from '@/lib/supabase'
-import { directionLabel, directionBg, directionColor, SECTOR_DESCRIPTIONS } from '@/lib/types'
+import {
+  directionLabel,
+  directionBg,
+  directionColor,
+  SECTOR_DESCRIPTIONS,
+  compositeForPrediction,
+  parsePredictionHorizon,
+  predictionHorizonParam,
+  PREDICTION_HORIZON_LABELS,
+} from '@/lib/types'
 import ScoreBar from '@/components/ScoreBar'
 import CategoryBreakdown from '@/components/CategoryBreakdown'
 import FeatureTable from '@/components/FeatureTable'
 import InfoTip from '@/components/InfoTip'
+import PredictionHorizonPicker from '@/components/PredictionHorizonPicker'
 import SectorHoldings from '@/components/SectorHoldings'
 import ScoreReadingGuide from '@/components/ScoreReadingGuide'
 import { COMPOSITE_INFO, COVERAGE_INFO } from '@/lib/descriptions'
@@ -16,6 +26,7 @@ export const dynamic = 'force-dynamic'
 
 interface Props {
   params: Promise<{ sector: string }>
+  searchParams: Promise<{ h?: string }>
 }
 
 export async function generateStaticParams() {
@@ -32,8 +43,10 @@ export async function generateMetadata({ params }: Props) {
   }
 }
 
-export default async function SectorPage({ params }: Props) {
+export default async function SectorPage({ params, searchParams }: Props) {
   const { sector: rawSector } = await params
+  const { h } = await searchParams
+  const predHorizon = parsePredictionHorizon(h)
   const sector = rawSector.toUpperCase()
 
   if (!SECTOR_DESCRIPTIONS[sector]) notFound()
@@ -47,7 +60,7 @@ export default async function SectorPage({ params }: Props) {
   if (!score) {
     return (
       <div className="space-y-6">
-        <BackLink />
+        <BackLink horizon={predHorizon} />
         <div className="rounded-xl border border-white/5 bg-white/[0.02] py-20 text-center space-y-3">
           <div className="text-4xl">📊</div>
           <p className="text-zinc-400 text-sm">No data yet for {sector}.</p>
@@ -63,9 +76,19 @@ export default async function SectorPage({ params }: Props) {
       })
     : null
 
+  const composite = compositeForPrediction(score, predHorizon)
+  const periodLabel = PREDICTION_HORIZON_LABELS[predHorizon].toLowerCase()
+  const sparklineData = history.map((row) =>
+    predHorizon === 'fwd_return_1m'
+      ? (row.composite_1m ?? row.composite)
+      : (row.composite_3m ?? row.composite),
+  )
+
   return (
     <div className="space-y-8">
-      <BackLink />
+      <BackLink horizon={predHorizon} />
+
+      <PredictionHorizonPicker current={predHorizon} basePath={`/${sector}`} />
 
       {/* Header */}
       <div className="space-y-1">
@@ -77,8 +100,8 @@ export default async function SectorPage({ params }: Props) {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
             {sector}
           </h1>
-          <span className={`text-sm px-3 py-1 rounded-full font-medium ${directionBg(score.composite)}`}>
-            {directionLabel(score.composite)}
+          <span className={`text-sm px-3 py-1 rounded-full font-medium ${directionBg(composite)}`}>
+            {directionLabel(composite)}
           </span>
         </div>
         {formatted && (
@@ -94,14 +117,15 @@ export default async function SectorPage({ params }: Props) {
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 inline-flex items-center gap-1.5">
-              Composite Score
+              Composite Score ({PREDICTION_HORIZON_LABELS[predHorizon]})
               <InfoTip what={COMPOSITE_INFO.what} why={COMPOSITE_INFO.why} align="start" />
             </p>
-            <p className={`text-5xl font-bold tabular-nums ${directionColor(score.composite)}`}>
-              {score.composite !== null
-                ? `${score.composite > 0 ? '+' : ''}${score.composite.toFixed(1)}`
+            <p className={`text-5xl font-bold tabular-nums ${directionColor(composite)}`}>
+              {composite !== null
+                ? `${composite > 0 ? '+' : ''}${composite.toFixed(1)}`
                 : 'n/a'}
             </p>
+            <p className="text-xs text-zinc-600 mt-1">Forward outlook over the next {periodLabel}</p>
           </div>
           <div className="text-right text-xs text-zinc-600 space-y-0.5">
             <p className="inline-flex items-center gap-1.5 justify-end">
@@ -118,7 +142,7 @@ export default async function SectorPage({ params }: Props) {
             </p>
           </div>
         </div>
-        <ScoreBar score={score.composite} size="lg" />
+        <ScoreBar score={composite} size="lg" />
         <div className="flex justify-between text-xs text-zinc-600">
           <span>−100 Weaker returns expected ahead</span>
           <span>0 Neutral</span>
@@ -146,9 +170,9 @@ export default async function SectorPage({ params }: Props) {
       {history.length > 1 && (
         <div className="rounded-xl border border-white/5 bg-white/[0.02] p-6 space-y-4">
           <h2 className="text-sm font-semibold text-zinc-300">
-            Historical Composite ({history.length} days)
+            Historical Composite — {PREDICTION_HORIZON_LABELS[predHorizon]} ({history.length} days)
           </h2>
-          <Sparkline data={history.map((h) => h.composite)} />
+          <Sparkline data={sparklineData} />
         </div>
       )}
 
@@ -197,9 +221,12 @@ export default async function SectorPage({ params }: Props) {
   )
 }
 
-function BackLink() {
+function BackLink({ horizon }: { horizon: ReturnType<typeof parsePredictionHorizon> }) {
   return (
-    <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
+    <Link
+      href={`/?h=${predictionHorizonParam(horizon)}`}
+      className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+    >
       <ArrowLeft className="w-3.5 h-3.5" />
       All sectors
     </Link>

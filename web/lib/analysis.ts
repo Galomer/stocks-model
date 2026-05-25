@@ -1,5 +1,5 @@
 import type { HistoricalScore, Horizon, ReturnHorizon, ReturnMode } from './types'
-import { EXCESS_HORIZON, SPY_HORIZON } from './types'
+import { EXCESS_HORIZON, SPY_HORIZON, predictionScoreForReturnHorizon } from './types'
 
 export type Pair = { score: number; ret: number; sector: string; date: string }
 
@@ -58,11 +58,11 @@ export function pairsForHorizon(
   const spyByDate = mode === 'excess' ? buildSpyReturnsByDate(rows) : null
   const out: Pair[] = []
   for (const r of rows) {
-    const score = r.composite
+    const score = predictionScoreForReturnHorizon(r, horizon)
     const ret = resolveReturn(r, horizon, mode, spyByDate ?? new Map())
     if (score === null || ret === null) continue
-    if (isNaN(score as number) || isNaN(ret)) continue
-    out.push({ score: Number(score), ret, sector: r.sector, date: r.as_of_date })
+    if (isNaN(score) || isNaN(ret)) continue
+    out.push({ score, ret, sector: r.sector, date: r.as_of_date })
   }
   return out
 }
@@ -181,9 +181,10 @@ export function correlationBySector(
   const bySector: Record<string, Pair[]> = {}
   for (const r of rows) {
     const v = resolveReturn(r, horizon, mode, spyByDate)
-    if (r.composite === null || v === null || isNaN(r.composite as number)) continue
+    const score = predictionScoreForReturnHorizon(r, horizon)
+    if (score === null || v === null || isNaN(score)) continue
     if (!bySector[r.sector]) bySector[r.sector] = []
-    bySector[r.sector].push({ score: Number(r.composite), ret: v, sector: r.sector, date: r.as_of_date })
+    bySector[r.sector].push({ score, ret: v, sector: r.sector, date: r.as_of_date })
   }
   return Object.entries(bySector)
     .map(([sector, pairs]) => ({

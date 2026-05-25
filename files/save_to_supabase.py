@@ -149,13 +149,22 @@ def main():
 
     rows = []
     for sector, sector_name in SECTOR_ETFS.items():
-        result = score_sector(sector, prices, fred, fg)
+        result = compute_composite(features, FEATURE_WEIGHTS)
         cat    = result["category_scores"]
+        by_h   = result.get("by_horizon") or {}
+        c1m    = result.get("composite_1m")
+        c3m    = result.get("composite_3m")
+        if c1m is None:
+            c1m = (by_h.get("fwd_return_1m") or {}).get("composite")
+        if c3m is None:
+            c3m = (by_h.get("fwd_return_3m") or {}).get("composite")
         row = {
             "run_date":    run_date,
             "sector":      sector,
             "sector_name": sector_name,
-            "composite":   nan_to_none(result["composite"]),
+            "composite":   nan_to_none(c3m if c3m is not None else result["composite"]),
+            "composite_1m": nan_to_none(c1m),
+            "composite_3m": nan_to_none(c3m),
             "momentum":    nan_to_none(cat.get("momentum")),
             "macro":       nan_to_none(cat.get("macro")),
             "sentiment":   nan_to_none(cat.get("sentiment")),

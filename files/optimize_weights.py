@@ -1,18 +1,8 @@
 """
-optimize_weights.py — Learn weights/signs/calibration from historical_scores.
+optimize_weights.py — Learn per-horizon weights/signs/calibration from historical_scores.
 
-Previous approach correlated each raw feature with absolute forward returns.
-That produced individually “correct” mean-reversion signs, but:
-  • 2019–2026 was mostly a bull market → most 3m returns are positive
-  • many features stack the same way → composite skews negative
-  • scatter plot looks top-left even when bullish > bearish on average
-
-New approach:
-  1. Target EXCESS returns (sector − SPY) — “did this sector beat the market?”
-  2. Cross-sectional demeaning within each date — rank sectors, not time-series level
-  3. Category weight caps — stop 8 momentum signals from dominating
-  4. Fit composite-level calibration (center + scale) on simulated scores
-  5. Validate corr(composite, excess_return) and print before/after stats
+Each prediction horizon (1m, 3m) gets its own weight bundle optimized against
+cross-sectional excess returns for that horizon.
 """
 
 from __future__ import annotations
@@ -29,13 +19,12 @@ import requests
 from model_core import (
     CATEGORY_WEIGHT_CAP,
     FEATURE_CATEGORY,
+    PREDICTION_HORIZONS,
     apply_calibration,
     raw_composite_from_features,
 )
 
 PAGE_SIZE = 1000
-HORIZONS = ("fwd_return_1m", "fwd_return_3m")
-HORIZON_W = (0.5, 0.5)
 EXCESS_SUFFIX = "_excess"
 NOISE_FLOOR = 0.03
 MIN_WEIGHT = 0.05
@@ -55,10 +44,10 @@ def _strip_suffix(url: str) -> str:
 def fetch_all_history(supabase_url: str, key: str) -> List[dict]:
     base = _strip_suffix(supabase_url)
     headers = {"apikey": key, "Authorization": f"Bearer {key}"}
-    excess_cols = [f"{h}{EXCESS_SUFFIX}" for h in HORIZONS]
+    excess_cols = [f"{h}{EXCESS_SUFFIX}" for h in PREDICTION_HORIZONS]
     select = (
         "as_of_date,sector,features,composite,"
-        + ",".join(list(HORIZONS) + excess_cols)
+        + ",".join(list(PREDICTION_HORIZONS) + excess_cols)
     )
     rows: List[dict] = []
     offset = 0
@@ -92,7 +81,7 @@ def pearson(xs: List[float], ys: List[float]) -> float:
         ey = y - my
         num += ex * ey
         dx += ex * ex
-        dy += ey * ey
+        dy += ey * dy
     denom = (dx * dy) ** 0.5
     return num / denom if denom else 0.0
 
@@ -129,23 +118,11 @@ def target_return(row: dict, horizon: str) -> float | None:
     return None
 
 
-def blended_target(row: dict) -> float | None:
-    total = 0.0
-    wsum = 0.0
-    for h, hw in zip(HORIZONS, HORIZON_W):
-        v = target_return(row, h)
-        if v is None:
-            continue
-        total += hw * v
-        wsum += hw
-    return total / wsum if wsum else None
-
-
 def cross_sectional_pairs(
     rows: List[dict],
     feature_name: str,
+    horizon: str,
 ) -> Tuple[List[float], List[float]]:
-    """Within each date, demean feature and target across sectors."""
     by_date: Dict[str, List[dict]] = defaultdict(list)
     for row in rows:
         by_date[row["as_of_date"]].append(row)
@@ -159,7 +136,7 @@ def cross_sectional_pairs(
         tgts: List[float] = []
         for row in group:
             f = (row.get("features") or {}).get(feature_name)
-            t = blended_target(row)
+            t = target_return(row, horizon)
             if f is None or t is None:
                 continue
             feats.append(float(f))
@@ -175,7 +152,6 @@ def cross_sectional_pairs(
 
 
 def apply_category_caps(weights: Dict[str, float]) -> Dict[str, float]:
-    """Renormalize so no single category exceeds CATEGORY_WEIGHT_CAP of total."""
     if not weights:
         return weights
     by_cat: Dict[str, float] = defaultdict(float)
@@ -200,15 +176,15 @@ def simulate_rows(
     rows: List[dict],
     weights: Dict[str, float],
     signs: Dict[str, int],
+    horizon: str,
     calibration: dict | None = None,
 ) -> Tuple[List[float], List[float], List[float]]:
-    """Return (raw_composites, calibrated_composites, blended_targets)."""
     raw_scores: List[float] = []
     cal_scores: List[float] = []
     targets: List[float] = []
     for row in rows:
         feats = row.get("features") or {}
-        tgt = blended_target(row)
+        tgt = target_return(row, horizon)
         raw = raw_composite_from_features(feats, weights, signs, use_learned=False)
         if raw is None or tgt is None:
             continue
@@ -220,8 +196,7 @@ def simulate_rows(
 
 
 def fit_calibration(raw_scores: List[float], targets: List[float]) -> dict:
-    """Center/spread raw composites for display on [-100, 100] (rank-preserving)."""
-    del targets  # correlation validated separately; not used for display scale
+    del targets
     if len(raw_scores) < 30:
         return {"raw_mean": 0.0, "raw_std": 1.0, "target_std": 30.0}
     raw_mean = sum(raw_scores) / len(raw_scores)
@@ -238,14 +213,14 @@ def greedy_sign_refine(
     rows: List[dict],
     weights: Dict[str, float],
     signs: Dict[str, int],
+    horizon: str,
     calibration: dict,
 ) -> Dict[str, int]:
-    """Flip signs on marginal features if composite excess corr improves."""
     signs = dict(signs)
     active = [n for n, w in weights.items() if w > 0]
 
     def score_corr(current_signs: Dict[str, int]) -> float:
-        _, cal, tgts = simulate_rows(rows, weights, current_signs, calibration)
+        _, cal, tgts = simulate_rows(rows, weights, current_signs, horizon, calibration)
         return pearson(cal, tgts)
 
     best = score_corr(signs)
@@ -260,8 +235,85 @@ def greedy_sign_refine(
                 signs = trial
                 best = c
                 improved = True
-                print(f"    sign flip {name} → composite excess corr {best:+.3f}")
+                print(f"    sign flip {name} → {horizon} excess corr {best:+.3f}")
     return signs
+
+
+def optimize_horizon(rows: List[dict], horizon: str, feature_names: List[str]) -> dict:
+    label = horizon.replace("fwd_return_", "").upper()
+    print(f"\n{'=' * 60}")
+    print(f"  Optimizing prediction horizon: {label} ({horizon})")
+    print(f"{'=' * 60}")
+    print(f"  {'feature':<28s} {'n':>6s} {'x-corr':>8s} {'sign':>4s} {'wgt':>6s}")
+
+    weights: Dict[str, float] = {}
+    signs: Dict[str, int] = {}
+    stats: Dict[str, dict] = {}
+
+    for name in feature_names:
+        xs, ys = cross_sectional_pairs(rows, name, horizon)
+        corr = pearson(xs, ys)
+        sign = 1 if corr >= 0 else -1
+        mag = abs(corr)
+        weight = 0.0 if mag < NOISE_FLOOR else max(min(mag, MAX_WEIGHT), MIN_WEIGHT)
+        weights[name] = round(weight, 4)
+        signs[name] = sign
+        stats[name] = {"xs_corr": round(corr, 4), "n": len(xs), "mode": "cross_sectional_excess"}
+        print(f"  {name:<28s} {len(xs):>6d} {corr:>+8.3f} {('+' if sign > 0 else '-'):>4s} {weight:>6.3f}")
+
+    weights = apply_category_caps(weights)
+
+    print("\n  Calibration")
+    raw_scores, _, _ = simulate_rows(rows, weights, signs, horizon)
+    calibration = fit_calibration(raw_scores, [])
+    print(
+        f"    raw_mean={calibration['raw_mean']:+.2f}  "
+        f"raw_std={calibration['raw_std']:.2f}  "
+        f"target_std={calibration['target_std']:.1f}"
+    )
+
+    print("\n  Sign refinement")
+    signs = greedy_sign_refine(rows, weights, signs, horizon, calibration)
+    raw_scores, cal_scores, targets = simulate_rows(rows, weights, signs, horizon, calibration)
+
+    corr_cal_excess = pearson(cal_scores, targets)
+    corr_cal_spear = spearman(cal_scores, targets)
+
+    abs_targets = []
+    cal_for_abs = []
+    for row in rows:
+        feats = row.get("features") or {}
+        t1 = row.get(horizon)
+        if t1 is None:
+            continue
+        raw = raw_composite_from_features(feats, weights, signs, use_learned=False)
+        if raw is None:
+            continue
+        cal_for_abs.append(apply_calibration(raw, calibration))
+        abs_targets.append(float(t1))
+    corr_cal_abs = pearson(cal_for_abs, abs_targets)
+
+    print(f"\n  Validation ({label}):")
+    print(f"    corr(calibrated, excess)     = {corr_cal_excess:+.3f}")
+    print(f"    spearman(calibrated, excess) = {corr_cal_spear:+.3f}")
+    print(f"    corr(calibrated, absolute)   = {corr_cal_abs:+.3f}")
+
+    kept = sum(1 for w in weights.values() if w > 0)
+    print(f"  Kept {kept} features")
+
+    return {
+        "horizon": horizon,
+        "weights": weights,
+        "signs": signs,
+        "calibration": calibration,
+        "stats": stats,
+        "composite_stats": {
+            "corr_excess_pearson": round(corr_cal_excess, 4),
+            "corr_excess_spearman": round(corr_cal_spear, 4),
+            "corr_absolute": round(corr_cal_abs, 4),
+            "n": len(cal_scores),
+        },
+    }
 
 
 def main():
@@ -278,98 +330,32 @@ def main():
     if rows:
         print(f"  date range: {rows[0]['as_of_date']} → {rows[-1]['as_of_date']}")
 
-    has_excess = sum(1 for r in rows if r.get("fwd_return_3m_excess") is not None)
-    print(f"  rows with excess returns: {has_excess} / {len(rows)}")
-    if has_excess < len(rows) * 0.5:
-        print("  [warn] excess return column sparse — re-run backfill after migration")
-
-    # ── Stage 1: per-feature cross-sectional weights on excess returns ────────
     feature_names = sorted({k for r in rows for k in (r.get("features") or {})})
-    print(f"\n  Stage 1 — cross-sectional feature selection (target: excess 1m+3m blend)")
-    print(f"  {'feature':<28s} {'n':>6s} {'x-corr':>8s} {'sign':>4s} {'wgt':>6s}")
 
-    weights: Dict[str, float] = {}
-    signs: Dict[str, int] = {}
-    stats: Dict[str, dict] = {}
+    by_horizon = {}
+    for horizon in PREDICTION_HORIZONS:
+        by_horizon[horizon] = optimize_horizon(rows, horizon, feature_names)
 
-    for name in feature_names:
-        xs, ys = cross_sectional_pairs(rows, name)
-        corr = pearson(xs, ys)
-        sign = 1 if corr >= 0 else -1
-        mag = abs(corr)
-        weight = 0.0 if mag < NOISE_FLOOR else max(min(mag, MAX_WEIGHT), MIN_WEIGHT)
-        weights[name] = round(weight, 4)
-        signs[name] = sign
-        stats[name] = {"xs_corr": round(corr, 4), "n": len(xs), "mode": "cross_sectional_excess"}
-        print(f"  {name:<28s} {len(xs):>6d} {corr:>+8.3f} {('+' if sign > 0 else '-'):>4s} {weight:>6.3f}")
-
-    weights = apply_category_caps(weights)
-
-    # ── Stage 2: composite calibration ────────────────────────────────────────
-    print("\n  Stage 2 — composite calibration on simulated scores")
-    raw_scores, _, targets = simulate_rows(rows, weights, signs)
-    calibration = fit_calibration(raw_scores, targets)
-    print(
-        f"    raw_mean={calibration['raw_mean']:+.2f}  "
-        f"raw_std={calibration['raw_std']:.2f}  "
-        f"target_std={calibration['target_std']:.1f}"
-    )
-
-    # ── Stage 3: greedy sign refinement at composite level ──────────────────
-    print("\n  Stage 3 — composite-level sign refinement")
-    signs = greedy_sign_refine(rows, weights, signs, calibration)
-    raw_scores, cal_scores, targets = simulate_rows(rows, weights, signs, calibration)
-
-    corr_raw_abs = pearson(raw_scores, targets)
-    corr_cal_excess = pearson(cal_scores, targets)
-    corr_cal_spear = spearman(cal_scores, targets)
-
-    # Absolute return correlation (for reference)
-    abs_targets = []
-    cal_for_abs = []
-    for row in rows:
-        feats = row.get("features") or {}
-        t1 = row.get("fwd_return_3m")
-        if t1 is None:
-            continue
-        raw = raw_composite_from_features(feats, weights, signs, use_learned=False)
-        if raw is None:
-            continue
-        cal_for_abs.append(apply_calibration(raw, calibration))
-        abs_targets.append(float(t1))
-    corr_cal_abs = pearson(cal_for_abs, abs_targets)
-
-    print(f"\n  Validation:")
-    print(f"    corr(raw_composite, excess)     = {corr_raw_abs:+.3f}")
-    print(f"    corr(calibrated, excess)        = {corr_cal_excess:+.3f}  (primary target)")
-    print(f"    spearman(calibrated, excess)    = {corr_cal_spear:+.3f}")
-    print(f"    corr(calibrated, absolute 3m)   = {corr_cal_abs:+.3f}")
-
-    composite_stats = {
-        "corr_excess_pearson": round(corr_cal_excess, 4),
-        "corr_excess_spearman": round(corr_cal_spear, 4),
-        "corr_absolute_3m": round(corr_cal_abs, 4),
-        "n": len(cal_scores),
-    }
-
-    kept = sum(1 for w in weights.values() if w > 0)
-    print(f"\n  Kept {kept} features with category cap {CATEGORY_WEIGHT_CAP:.0%}")
+    default = by_horizon["fwd_return_3m"]
 
     out = {
-        "version": 2,
-        "target": "cross_sectional_excess_blend",
-        "horizons": list(HORIZONS),
-        "horizon_weights": list(HORIZON_W),
+        "version": 3,
+        "target": "cross_sectional_excess_per_horizon",
+        "prediction_horizons": list(PREDICTION_HORIZONS),
+        "default_horizon": "fwd_return_3m",
         "noise_floor": NOISE_FLOOR,
         "min_weight": MIN_WEIGHT,
         "max_weight": MAX_WEIGHT,
         "category_weight_cap": CATEGORY_WEIGHT_CAP,
-        "weights": weights,
-        "signs": signs,
-        "calibration": calibration,
-        "stats": stats,
-        "composite_stats": composite_stats,
+        "by_horizon": by_horizon,
+        # Legacy top-level keys → 3m bundle for backward compatibility.
+        "weights": default["weights"],
+        "signs": default["signs"],
+        "calibration": default["calibration"],
+        "stats": default["stats"],
+        "composite_stats": default["composite_stats"],
     }
+
     target = Path(__file__).parent / "learned_weights.json"
     target.write_text(json.dumps(out, indent=2))
     print(f"\n  Wrote {target}")

@@ -1,24 +1,50 @@
 import { getAllSectorScores, getLatestRunDate } from '@/lib/supabase'
-import { directionLabel, directionBg, directionColor, CATEGORY_ORDER, CATEGORY_LABELS } from '@/lib/types'
+import {
+  directionLabel,
+  directionBg,
+  directionColor,
+  CATEGORY_ORDER,
+  CATEGORY_LABELS,
+  compositeForPrediction,
+  parsePredictionHorizon,
+  predictionHorizonParam,
+  PREDICTION_HORIZON_LABELS,
+} from '@/lib/types'
 import ScoreBar from '@/components/ScoreBar'
 import InfoTip from '@/components/InfoTip'
+import PredictionHorizonPicker from '@/components/PredictionHorizonPicker'
 import { CATEGORY_INFO, COMPOSITE_INFO } from '@/lib/descriptions'
 import { TrendingUp, Calendar, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
-export default async function HomePage() {
+interface Props {
+  searchParams: Promise<{ h?: string }>
+}
+
+export default async function HomePage({ searchParams }: Props) {
+  const { h } = await searchParams
+  const predHorizon = parsePredictionHorizon(h)
+
   const [scores, latestDate] = await Promise.all([
     getAllSectorScores(),
     getLatestRunDate(),
   ])
+
+  const ranked = [...scores].sort((a, b) => {
+    const av = compositeForPrediction(a, predHorizon) ?? -999
+    const bv = compositeForPrediction(b, predHorizon) ?? -999
+    return bv - av
+  })
 
   const formatted = latestDate
     ? new Date(latestDate + 'T00:00:00').toLocaleDateString('en-US', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
       })
     : null
+
+  const periodLabel = PREDICTION_HORIZON_LABELS[predHorizon].toLowerCase()
 
   return (
     <div className="space-y-8">
@@ -32,9 +58,9 @@ export default async function HomePage() {
           Which sectors look strong right now?
         </h1>
         <p className="text-zinc-400 text-sm max-w-xl">
-          Each sector gets a forward-looking score from −100 to +100: what the model expects
-          over the next 1–3 months, not how price has moved lately. A sector that has rallied
-          hard can still score negative if the model sees pullback risk ahead.
+          Each sector gets a forward-looking score from −100 to +100 for the next{' '}
+          <span className="text-zinc-300">{periodLabel}</span> — not how price has moved lately.
+          A sector that has rallied hard can still score negative if the model sees pullback risk ahead.
         </p>
         {formatted && (
           <div className="flex items-center gap-1.5 text-xs text-zinc-500 pt-1">
@@ -44,7 +70,9 @@ export default async function HomePage() {
         )}
       </div>
 
-      {scores.length === 0 ? (
+      <PredictionHorizonPicker current={predHorizon} />
+
+      {ranked.length === 0 ? (
         <EmptyState />
       ) : (
         <>
@@ -68,41 +96,44 @@ export default async function HomePage() {
               </span>
             </div>
 
-            {scores.map((s, i) => (
-              <Link
-                key={s.sector}
-                href={`/${s.sector}`}
-                className="grid grid-cols-[auto_1fr_140px_72px_100px] gap-4 px-4 py-4 items-center border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition-colors group"
-              >
-                <span className="w-6 text-sm tabular-nums text-zinc-500">{i + 1}</span>
+            {ranked.map((s, i) => {
+              const composite = compositeForPrediction(s, predHorizon)
+              return (
+                <Link
+                  key={s.sector}
+                  href={`/${s.sector}?h=${predictionHorizonParam(predHorizon)}`}
+                  className="grid grid-cols-[auto_1fr_140px_72px_100px] gap-4 px-4 py-4 items-center border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition-colors group"
+                >
+                  <span className="w-6 text-sm tabular-nums text-zinc-500">{i + 1}</span>
 
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-semibold text-white">{s.sector}</span>
-                    <span className="hidden md:block text-xs text-zinc-500 truncate">{s.sector_name}</span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-semibold text-white">{s.sector}</span>
+                      <span className="hidden md:block text-xs text-zinc-500 truncate">{s.sector_name}</span>
+                    </div>
+                    <div className="md:hidden text-xs text-zinc-500 mt-0.5 truncate">{s.sector_name}</div>
                   </div>
-                  <div className="md:hidden text-xs text-zinc-500 mt-0.5 truncate">{s.sector_name}</div>
-                </div>
 
-                <div className="hidden sm:block">
-                  <ScoreBar score={s.composite} size="sm" />
-                </div>
+                  <div className="hidden sm:block">
+                    <ScoreBar score={composite} size="sm" />
+                  </div>
 
-                <div className="text-right">
-                  <span className={`text-sm font-semibold tabular-nums ${directionColor(s.composite)}`}>
-                    {s.composite !== null
-                      ? `${s.composite > 0 ? '+' : ''}${s.composite.toFixed(1)}`
-                      : 'n/a'}
-                  </span>
-                </div>
+                  <div className="text-right">
+                    <span className={`text-sm font-semibold tabular-nums ${directionColor(composite)}`}>
+                      {composite !== null
+                        ? `${composite > 0 ? '+' : ''}${composite.toFixed(1)}`
+                        : 'n/a'}
+                    </span>
+                  </div>
 
-                <div className="text-right">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${directionBg(s.composite)}`}>
-                    {directionLabel(s.composite)}
-                  </span>
-                </div>
-              </Link>
-            ))}
+                  <div className="text-right">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${directionBg(composite)}`}>
+                      {directionLabel(composite)}
+                    </span>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
 
           {/* Category mini-scores */}
