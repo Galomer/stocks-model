@@ -40,16 +40,16 @@
       },
       "signs": {
         "bond_equity_ratio_chg_3m": -1,
-        "breadth_above_50dma": -1,
+        "breadth_above_50dma": 1,
         "commodity_change_3m": 1,
         "cyclical_vs_defensive": 1,
         "dist_52w_high": -1,
         "hy_spread_chg_1m": -1,
-        "hy_spread_level": 1,
-        "ig_spread_level": 1,
+        "hy_spread_level": -1,
+        "ig_spread_level": -1,
         "price_vs_200dma": -1,
         "price_vs_50dma": -1,
-        "real_yield_level": 1,
+        "real_yield_level": -1,
         "relative_strength_3m": -1,
         "roc_1m": 1,
         "roc_3m": -1,
@@ -57,11 +57,11 @@
         "rsi": -1,
         "sector_vs_market_corr": -1,
         "usd_change_3m": 1,
-        "vix_level": -1,
+        "vix_level": 1,
         "vix_pctile_1y": 1,
         "vix_term_structure": 1,
         "yield_curve_chg_1m": -1,
-        "yield_curve_slope": -1
+        "yield_curve_slope": 1
       },
       "calibration": {
         "raw_mean": 0.0247,
@@ -75,7 +75,7 @@
           "mode": "cross_sectional_excess"
         },
         "breadth_above_50dma": {
-          "xs_corr": -0.0,
+          "xs_corr": 0.0,
           "n": 4048,
           "mode": "cross_sectional_excess"
         },
@@ -100,12 +100,12 @@
           "mode": "cross_sectional_excess"
         },
         "hy_spread_level": {
-          "xs_corr": 0.0,
+          "xs_corr": -0.0,
           "n": 2706,
           "mode": "cross_sectional_excess"
         },
         "ig_spread_level": {
-          "xs_corr": 0.0,
+          "xs_corr": -0.0,
           "n": 2706,
           "mode": "cross_sectional_excess"
         },
@@ -120,7 +120,7 @@
           "mode": "cross_sectional_excess"
         },
         "real_yield_level": {
-          "xs_corr": 0.0,
+          "xs_corr": -0.0,
           "n": 5665,
           "mode": "cross_sectional_excess"
         },
@@ -160,7 +160,7 @@
           "mode": "cross_sectional_excess"
         },
         "vix_level": {
-          "xs_corr": -0.0,
+          "xs_corr": 0.0,
           "n": 5665,
           "mode": "cross_sectional_excess"
         },
@@ -180,7 +180,7 @@
           "mode": "cross_sectional_excess"
         },
         "yield_curve_slope": {
-          "xs_corr": -0.0,
+          "xs_corr": 0.0,
           "n": 5665,
           "mode": "cross_sectional_excess"
         }
@@ -220,14 +220,14 @@
         "yield_curve_slope": 0.0
       },
       "signs": {
-        "bond_equity_ratio_chg_3m": 1,
+        "bond_equity_ratio_chg_3m": -1,
         "breadth_above_50dma": -1,
         "commodity_change_3m": 1,
         "cyclical_vs_defensive": -1,
         "dist_52w_high": 1,
         "hy_spread_chg_1m": 1,
         "hy_spread_level": -1,
-        "ig_spread_level": 1,
+        "ig_spread_level": -1,
         "price_vs_200dma": -1,
         "price_vs_50dma": -1,
         "real_yield_level": -1,
@@ -238,11 +238,11 @@
         "rsi": -1,
         "sector_vs_market_corr": -1,
         "usd_change_3m": 1,
-        "vix_level": -1,
+        "vix_level": 1,
         "vix_pctile_1y": 1,
         "vix_term_structure": 1,
-        "yield_curve_chg_1m": -1,
-        "yield_curve_slope": -1
+        "yield_curve_chg_1m": 1,
+        "yield_curve_slope": 1
       },
       "calibration": {
         "raw_mean": 0.87,
@@ -251,7 +251,7 @@
       },
       "stats": {
         "bond_equity_ratio_chg_3m": {
-          "xs_corr": 0.0,
+          "xs_corr": -0.0,
           "n": 3960,
           "mode": "cross_sectional_excess"
         },
@@ -286,7 +286,7 @@
           "mode": "cross_sectional_excess"
         },
         "ig_spread_level": {
-          "xs_corr": 0.0,
+          "xs_corr": -0.0,
           "n": 2530,
           "mode": "cross_sectional_excess"
         },
@@ -341,7 +341,7 @@
           "mode": "cross_sectional_excess"
         },
         "vix_level": {
-          "xs_corr": -0.0,
+          "xs_corr": 0.0,
           "n": 5489,
           "mode": "cross_sectional_excess"
         },
@@ -356,12 +356,12 @@
           "mode": "cross_sectional_excess"
         },
         "yield_curve_chg_1m": {
-          "xs_corr": -0.0,
+          "xs_corr": 0.0,
           "n": 5489,
           "mode": "cross_sectional_excess"
         },
         "yield_curve_slope": {
-          "xs_corr": -0.0,
+          "xs_corr": 0.0,
           "n": 5489,
           "mode": "cross_sectional_excess"
         }
@@ -400,14 +400,14 @@
     "yield_curve_slope": 0.0
   },
   "signs": {
-    "bond_equity_ratio_chg_3m": 1,
+    "bond_equity_ratio_chg_3m": -1,
     "breadth_above_50dma": -1,
     "commodity_change_3m": 1,
     "cyclical_vs_defensive": -1,
     "dist_52w_high": 1,
     "hy_spread_chg_1m": 1,
     "hy_spread_level": -1,
-    "ig_spread_level": 1,
+    "ig_spread_level": -1,
     "price_vs_200dma": -1,
     "price_vs_50dma": -1,
     "real_yield_level": -1,
@@ -418,11 +418,11 @@
     "rsi": -1,
     "sector_vs_market_corr": -1,
     "usd_change_3m": 1,
-    "vix_level": -1,
+    "vix_level": 1,
     "vix_pctile_1y": 1,
     "vix_term_structure": 1,
-    "yield_curve_chg_1m": -1,
-    "yield_curve_slope": -1
+    "yield_curve_chg_1m": 1,
+    "yield_curve_slope": 1
   },
   "calibration": {
     "raw_mean": 0.87,
@@ -431,7 +431,7 @@
   },
   "stats": {
     "bond_equity_ratio_chg_3m": {
-      "xs_corr": 0.0,
+      "xs_corr": -0.0,
       "n": 3960,
       "mode": "cross_sectional_excess"
     },
@@ -466,7 +466,7 @@
       "mode": "cross_sectional_excess"
     },
     "ig_spread_level": {
-      "xs_corr": 0.0,
+      "xs_corr": -0.0,
       "n": 2530,
       "mode": "cross_sectional_excess"
     },
@@ -521,7 +521,7 @@
       "mode": "cross_sectional_excess"
     },
     "vix_level": {
-      "xs_corr": -0.0,
+      "xs_corr": 0.0,
       "n": 5489,
       "mode": "cross_sectional_excess"
     },
@@ -536,12 +536,12 @@
       "mode": "cross_sectional_excess"
     },
     "yield_curve_chg_1m": {
-      "xs_corr": -0.0,
+      "xs_corr": 0.0,
       "n": 5489,
       "mode": "cross_sectional_excess"
     },
     "yield_curve_slope": {
-      "xs_corr": -0.0,
+      "xs_corr": 0.0,
       "n": 5489,
       "mode": "cross_sectional_excess"
     }
