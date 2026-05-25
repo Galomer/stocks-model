@@ -1,18 +1,379 @@
 {
-  "version": 2,
-  "target": "cross_sectional_excess_blend",
-  "horizons": [
+  "version": 3,
+  "target": "cross_sectional_excess_per_horizon",
+  "prediction_horizons": [
     "fwd_return_1m",
     "fwd_return_3m"
   ],
-  "horizon_weights": [
-    0.5,
-    0.5
-  ],
+  "default_horizon": "fwd_return_3m",
   "noise_floor": 0.03,
   "min_weight": 0.05,
   "max_weight": 0.35,
   "category_weight_cap": 0.38,
+  "by_horizon": {
+    "fwd_return_1m": {
+      "horizon": "fwd_return_1m",
+      "weights": {
+        "bond_equity_ratio_chg_3m": 0.0,
+        "breadth_above_50dma": 0.0,
+        "commodity_change_3m": 0.0,
+        "cyclical_vs_defensive": 0.0,
+        "dist_52w_high": 0.0,
+        "hy_spread_chg_1m": 0.0,
+        "hy_spread_level": 0.0,
+        "ig_spread_level": 0.0,
+        "price_vs_200dma": 0.0,
+        "price_vs_50dma": 0.0,
+        "real_yield_level": 0.0,
+        "relative_strength_3m": 0.0,
+        "roc_1m": 0.0,
+        "roc_3m": 0.0,
+        "roc_6m": 0.0,
+        "rsi": 0.0,
+        "sector_vs_market_corr": 0.0,
+        "usd_change_3m": 0.0,
+        "vix_level": 0.0,
+        "vix_pctile_1y": 0.0,
+        "vix_term_structure": 0.0,
+        "yield_curve_chg_1m": 0.0,
+        "yield_curve_slope": 0.0
+      },
+      "signs": {
+        "bond_equity_ratio_chg_3m": 1,
+        "breadth_above_50dma": 1,
+        "commodity_change_3m": 1,
+        "cyclical_vs_defensive": 1,
+        "dist_52w_high": 1,
+        "hy_spread_chg_1m": 1,
+        "hy_spread_level": 1,
+        "ig_spread_level": 1,
+        "price_vs_200dma": 1,
+        "price_vs_50dma": 1,
+        "real_yield_level": 1,
+        "relative_strength_3m": 1,
+        "roc_1m": 1,
+        "roc_3m": 1,
+        "roc_6m": 1,
+        "rsi": 1,
+        "sector_vs_market_corr": 1,
+        "usd_change_3m": 1,
+        "vix_level": 1,
+        "vix_pctile_1y": 1,
+        "vix_term_structure": 1,
+        "yield_curve_chg_1m": 1,
+        "yield_curve_slope": 1
+      },
+      "calibration": {
+        "raw_mean": 0.0,
+        "raw_std": 1.0,
+        "target_std": 30.0
+      },
+      "stats": {
+        "bond_equity_ratio_chg_3m": {
+          "xs_corr": 0.0,
+          "n": 4048,
+          "mode": "cross_sectional_excess"
+        },
+        "breadth_above_50dma": {
+          "xs_corr": 0.0,
+          "n": 4048,
+          "mode": "cross_sectional_excess"
+        },
+        "commodity_change_3m": {
+          "xs_corr": 0.0,
+          "n": 0,
+          "mode": "cross_sectional_excess"
+        },
+        "cyclical_vs_defensive": {
+          "xs_corr": 0.0,
+          "n": 5665,
+          "mode": "cross_sectional_excess"
+        },
+        "dist_52w_high": {
+          "xs_corr": 0.0,
+          "n": 4010,
+          "mode": "cross_sectional_excess"
+        },
+        "hy_spread_chg_1m": {
+          "xs_corr": 0.0,
+          "n": 2607,
+          "mode": "cross_sectional_excess"
+        },
+        "hy_spread_level": {
+          "xs_corr": 0.0,
+          "n": 2706,
+          "mode": "cross_sectional_excess"
+        },
+        "ig_spread_level": {
+          "xs_corr": 0.0,
+          "n": 2706,
+          "mode": "cross_sectional_excess"
+        },
+        "price_vs_200dma": {
+          "xs_corr": 0.0,
+          "n": 5627,
+          "mode": "cross_sectional_excess"
+        },
+        "price_vs_50dma": {
+          "xs_corr": 0.0,
+          "n": 5657,
+          "mode": "cross_sectional_excess"
+        },
+        "real_yield_level": {
+          "xs_corr": 0.0,
+          "n": 5665,
+          "mode": "cross_sectional_excess"
+        },
+        "relative_strength_3m": {
+          "xs_corr": 0.0,
+          "n": 5654,
+          "mode": "cross_sectional_excess"
+        },
+        "roc_1m": {
+          "xs_corr": 0.0,
+          "n": 5662,
+          "mode": "cross_sectional_excess"
+        },
+        "roc_3m": {
+          "xs_corr": 0.0,
+          "n": 5654,
+          "mode": "cross_sectional_excess"
+        },
+        "roc_6m": {
+          "xs_corr": 0.0,
+          "n": 5641,
+          "mode": "cross_sectional_excess"
+        },
+        "rsi": {
+          "xs_corr": 0.0,
+          "n": 5665,
+          "mode": "cross_sectional_excess"
+        },
+        "sector_vs_market_corr": {
+          "xs_corr": 0.0,
+          "n": 5655,
+          "mode": "cross_sectional_excess"
+        },
+        "usd_change_3m": {
+          "xs_corr": 0.0,
+          "n": 5665,
+          "mode": "cross_sectional_excess"
+        },
+        "vix_level": {
+          "xs_corr": 0.0,
+          "n": 5665,
+          "mode": "cross_sectional_excess"
+        },
+        "vix_pctile_1y": {
+          "xs_corr": 0.0,
+          "n": 4048,
+          "mode": "cross_sectional_excess"
+        },
+        "vix_term_structure": {
+          "xs_corr": 0.0,
+          "n": 5665,
+          "mode": "cross_sectional_excess"
+        },
+        "yield_curve_chg_1m": {
+          "xs_corr": 0.0,
+          "n": 5665,
+          "mode": "cross_sectional_excess"
+        },
+        "yield_curve_slope": {
+          "xs_corr": 0.0,
+          "n": 5665,
+          "mode": "cross_sectional_excess"
+        }
+      },
+      "composite_stats": {
+        "corr_excess_pearson": 0.0,
+        "corr_excess_spearman": 0.0,
+        "corr_absolute": 0.0,
+        "n": 0
+      }
+    },
+    "fwd_return_3m": {
+      "horizon": "fwd_return_3m",
+      "weights": {
+        "bond_equity_ratio_chg_3m": 0.0,
+        "breadth_above_50dma": 0.0,
+        "commodity_change_3m": 0.0,
+        "cyclical_vs_defensive": 0.0,
+        "dist_52w_high": 0.0,
+        "hy_spread_chg_1m": 0.0,
+        "hy_spread_level": 0.0,
+        "ig_spread_level": 0.0,
+        "price_vs_200dma": 0.0,
+        "price_vs_50dma": 0.0,
+        "real_yield_level": 0.0,
+        "relative_strength_3m": 0.0,
+        "roc_1m": 0.0,
+        "roc_3m": 0.0,
+        "roc_6m": 0.0,
+        "rsi": 0.0,
+        "sector_vs_market_corr": 0.0,
+        "usd_change_3m": 0.0,
+        "vix_level": 0.0,
+        "vix_pctile_1y": 0.0,
+        "vix_term_structure": 0.0,
+        "yield_curve_chg_1m": 0.0,
+        "yield_curve_slope": 0.0
+      },
+      "signs": {
+        "bond_equity_ratio_chg_3m": 1,
+        "breadth_above_50dma": 1,
+        "commodity_change_3m": 1,
+        "cyclical_vs_defensive": 1,
+        "dist_52w_high": 1,
+        "hy_spread_chg_1m": 1,
+        "hy_spread_level": 1,
+        "ig_spread_level": 1,
+        "price_vs_200dma": 1,
+        "price_vs_50dma": 1,
+        "real_yield_level": 1,
+        "relative_strength_3m": 1,
+        "roc_1m": 1,
+        "roc_3m": 1,
+        "roc_6m": 1,
+        "rsi": 1,
+        "sector_vs_market_corr": 1,
+        "usd_change_3m": 1,
+        "vix_level": 1,
+        "vix_pctile_1y": 1,
+        "vix_term_structure": 1,
+        "yield_curve_chg_1m": 1,
+        "yield_curve_slope": 1
+      },
+      "calibration": {
+        "raw_mean": 0.0,
+        "raw_std": 1.0,
+        "target_std": 30.0
+      },
+      "stats": {
+        "bond_equity_ratio_chg_3m": {
+          "xs_corr": 0.0,
+          "n": 3960,
+          "mode": "cross_sectional_excess"
+        },
+        "breadth_above_50dma": {
+          "xs_corr": 0.0,
+          "n": 3960,
+          "mode": "cross_sectional_excess"
+        },
+        "commodity_change_3m": {
+          "xs_corr": 0.0,
+          "n": 0,
+          "mode": "cross_sectional_excess"
+        },
+        "cyclical_vs_defensive": {
+          "xs_corr": 0.0,
+          "n": 5489,
+          "mode": "cross_sectional_excess"
+        },
+        "dist_52w_high": {
+          "xs_corr": 0.0,
+          "n": 3922,
+          "mode": "cross_sectional_excess"
+        },
+        "hy_spread_chg_1m": {
+          "xs_corr": 0.0,
+          "n": 2431,
+          "mode": "cross_sectional_excess"
+        },
+        "hy_spread_level": {
+          "xs_corr": 0.0,
+          "n": 2530,
+          "mode": "cross_sectional_excess"
+        },
+        "ig_spread_level": {
+          "xs_corr": 0.0,
+          "n": 2530,
+          "mode": "cross_sectional_excess"
+        },
+        "price_vs_200dma": {
+          "xs_corr": 0.0,
+          "n": 5451,
+          "mode": "cross_sectional_excess"
+        },
+        "price_vs_50dma": {
+          "xs_corr": 0.0,
+          "n": 5481,
+          "mode": "cross_sectional_excess"
+        },
+        "real_yield_level": {
+          "xs_corr": 0.0,
+          "n": 5489,
+          "mode": "cross_sectional_excess"
+        },
+        "relative_strength_3m": {
+          "xs_corr": 0.0,
+          "n": 5478,
+          "mode": "cross_sectional_excess"
+        },
+        "roc_1m": {
+          "xs_corr": 0.0,
+          "n": 5486,
+          "mode": "cross_sectional_excess"
+        },
+        "roc_3m": {
+          "xs_corr": 0.0,
+          "n": 5478,
+          "mode": "cross_sectional_excess"
+        },
+        "roc_6m": {
+          "xs_corr": 0.0,
+          "n": 5465,
+          "mode": "cross_sectional_excess"
+        },
+        "rsi": {
+          "xs_corr": 0.0,
+          "n": 5489,
+          "mode": "cross_sectional_excess"
+        },
+        "sector_vs_market_corr": {
+          "xs_corr": 0.0,
+          "n": 5479,
+          "mode": "cross_sectional_excess"
+        },
+        "usd_change_3m": {
+          "xs_corr": 0.0,
+          "n": 5489,
+          "mode": "cross_sectional_excess"
+        },
+        "vix_level": {
+          "xs_corr": 0.0,
+          "n": 5489,
+          "mode": "cross_sectional_excess"
+        },
+        "vix_pctile_1y": {
+          "xs_corr": 0.0,
+          "n": 3960,
+          "mode": "cross_sectional_excess"
+        },
+        "vix_term_structure": {
+          "xs_corr": 0.0,
+          "n": 5489,
+          "mode": "cross_sectional_excess"
+        },
+        "yield_curve_chg_1m": {
+          "xs_corr": 0.0,
+          "n": 5489,
+          "mode": "cross_sectional_excess"
+        },
+        "yield_curve_slope": {
+          "xs_corr": 0.0,
+          "n": 5489,
+          "mode": "cross_sectional_excess"
+        }
+      },
+      "composite_stats": {
+        "corr_excess_pearson": 0.0,
+        "corr_excess_spearman": 0.0,
+        "corr_absolute": 0.0,
+        "n": 0
+      }
+    }
+  },
   "weights": {
     "bond_equity_ratio_chg_3m": 0.0,
     "breadth_above_50dma": 0.0,
@@ -22,16 +383,16 @@
     "hy_spread_chg_1m": 0.0,
     "hy_spread_level": 0.0,
     "ig_spread_level": 0.0,
-    "price_vs_200dma": 0.0282,
-    "price_vs_50dma": 0.0281,
+    "price_vs_200dma": 0.0,
+    "price_vs_50dma": 0.0,
     "real_yield_level": 0.0,
-    "relative_strength_3m": 0.0303,
-    "roc_1m": 0.0219,
-    "roc_3m": 0.042,
-    "roc_6m": 0.028,
-    "rsi": 0.0219,
+    "relative_strength_3m": 0.0,
+    "roc_1m": 0.0,
+    "roc_3m": 0.0,
+    "roc_6m": 0.0,
+    "rsi": 0.0,
     "sector_vs_market_corr": 0.0,
-    "usd_change_3m": 0.0709,
+    "usd_change_3m": 0.0,
     "vix_level": 0.0,
     "vix_pctile_1y": 0.0,
     "vix_term_structure": 0.0,
@@ -39,44 +400,44 @@
     "yield_curve_slope": 0.0
   },
   "signs": {
-    "bond_equity_ratio_chg_3m": -1,
-    "breadth_above_50dma": -1,
+    "bond_equity_ratio_chg_3m": 1,
+    "breadth_above_50dma": 1,
     "commodity_change_3m": 1,
-    "cyclical_vs_defensive": -1,
+    "cyclical_vs_defensive": 1,
     "dist_52w_high": 1,
-    "hy_spread_chg_1m": -1,
+    "hy_spread_chg_1m": 1,
     "hy_spread_level": 1,
     "ig_spread_level": 1,
-    "price_vs_200dma": -1,
-    "price_vs_50dma": -1,
+    "price_vs_200dma": 1,
+    "price_vs_50dma": 1,
     "real_yield_level": 1,
-    "relative_strength_3m": -1,
-    "roc_1m": -1,
-    "roc_3m": -1,
-    "roc_6m": -1,
-    "rsi": -1,
-    "sector_vs_market_corr": -1,
+    "relative_strength_3m": 1,
+    "roc_1m": 1,
+    "roc_3m": 1,
+    "roc_6m": 1,
+    "rsi": 1,
+    "sector_vs_market_corr": 1,
     "usd_change_3m": 1,
     "vix_level": 1,
     "vix_pctile_1y": 1,
-    "vix_term_structure": -1,
-    "yield_curve_chg_1m": -1,
-    "yield_curve_slope": -1
+    "vix_term_structure": 1,
+    "yield_curve_chg_1m": 1,
+    "yield_curve_slope": 1
   },
   "calibration": {
-    "raw_mean": 0.6951,
-    "raw_std": 25.6592,
+    "raw_mean": 0.0,
+    "raw_std": 1.0,
     "target_std": 30.0
   },
   "stats": {
     "bond_equity_ratio_chg_3m": {
-      "xs_corr": -0.0,
-      "n": 4048,
+      "xs_corr": 0.0,
+      "n": 3960,
       "mode": "cross_sectional_excess"
     },
     "breadth_above_50dma": {
-      "xs_corr": -0.0,
-      "n": 4048,
+      "xs_corr": 0.0,
+      "n": 3960,
       "mode": "cross_sectional_excess"
     },
     "commodity_change_3m": {
@@ -85,110 +446,110 @@
       "mode": "cross_sectional_excess"
     },
     "cyclical_vs_defensive": {
-      "xs_corr": -0.0,
-      "n": 5665,
+      "xs_corr": 0.0,
+      "n": 5489,
       "mode": "cross_sectional_excess"
     },
     "dist_52w_high": {
-      "xs_corr": 0.0074,
-      "n": 4010,
+      "xs_corr": 0.0,
+      "n": 3922,
       "mode": "cross_sectional_excess"
     },
     "hy_spread_chg_1m": {
-      "xs_corr": -0.0,
-      "n": 2607,
+      "xs_corr": 0.0,
+      "n": 2431,
       "mode": "cross_sectional_excess"
     },
     "hy_spread_level": {
       "xs_corr": 0.0,
-      "n": 2706,
+      "n": 2530,
       "mode": "cross_sectional_excess"
     },
     "ig_spread_level": {
       "xs_corr": 0.0,
-      "n": 2706,
+      "n": 2530,
       "mode": "cross_sectional_excess"
     },
     "price_vs_200dma": {
-      "xs_corr": -0.0642,
-      "n": 5627,
+      "xs_corr": 0.0,
+      "n": 5451,
       "mode": "cross_sectional_excess"
     },
     "price_vs_50dma": {
-      "xs_corr": -0.0641,
-      "n": 5657,
+      "xs_corr": 0.0,
+      "n": 5481,
       "mode": "cross_sectional_excess"
     },
     "real_yield_level": {
       "xs_corr": 0.0,
-      "n": 5665,
+      "n": 5489,
       "mode": "cross_sectional_excess"
     },
     "relative_strength_3m": {
-      "xs_corr": -0.0691,
-      "n": 5654,
+      "xs_corr": 0.0,
+      "n": 5478,
       "mode": "cross_sectional_excess"
     },
     "roc_1m": {
-      "xs_corr": -0.0401,
-      "n": 5662,
+      "xs_corr": 0.0,
+      "n": 5486,
       "mode": "cross_sectional_excess"
     },
     "roc_3m": {
-      "xs_corr": -0.0957,
-      "n": 5654,
+      "xs_corr": 0.0,
+      "n": 5478,
       "mode": "cross_sectional_excess"
     },
     "roc_6m": {
-      "xs_corr": -0.0638,
-      "n": 5641,
+      "xs_corr": 0.0,
+      "n": 5465,
       "mode": "cross_sectional_excess"
     },
     "rsi": {
-      "xs_corr": -0.049,
-      "n": 5665,
+      "xs_corr": 0.0,
+      "n": 5489,
       "mode": "cross_sectional_excess"
     },
     "sector_vs_market_corr": {
-      "xs_corr": -0.0208,
-      "n": 5655,
+      "xs_corr": 0.0,
+      "n": 5479,
       "mode": "cross_sectional_excess"
     },
     "usd_change_3m": {
-      "xs_corr": 0.0709,
-      "n": 5665,
+      "xs_corr": 0.0,
+      "n": 5489,
       "mode": "cross_sectional_excess"
     },
     "vix_level": {
       "xs_corr": 0.0,
-      "n": 5665,
+      "n": 5489,
       "mode": "cross_sectional_excess"
     },
     "vix_pctile_1y": {
       "xs_corr": 0.0,
-      "n": 4048,
+      "n": 3960,
       "mode": "cross_sectional_excess"
     },
     "vix_term_structure": {
-      "xs_corr": -0.0,
-      "n": 5665,
+      "xs_corr": 0.0,
+      "n": 5489,
       "mode": "cross_sectional_excess"
     },
     "yield_curve_chg_1m": {
-      "xs_corr": -0.0,
-      "n": 5665,
+      "xs_corr": 0.0,
+      "n": 5489,
       "mode": "cross_sectional_excess"
     },
     "yield_curve_slope": {
-      "xs_corr": -0.0,
-      "n": 5665,
+      "xs_corr": 0.0,
+      "n": 5489,
       "mode": "cross_sectional_excess"
     }
   },
   "composite_stats": {
-    "corr_excess_pearson": -0.067,
-    "corr_excess_spearman": -0.0624,
-    "corr_absolute_3m": -0.1032,
-    "n": 5665
+    "corr_excess_pearson": 0.0,
+    "corr_excess_spearman": 0.0,
+    "corr_absolute": 0.0,
+    "n": 0
   }
 }
