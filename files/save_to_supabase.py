@@ -149,7 +149,7 @@ def main():
 
     rows = []
     for sector, sector_name in SECTOR_ETFS.items():
-        result = compute_composite(features, FEATURE_WEIGHTS)
+        result = score_sector(sector, prices, fred, fg)
         cat    = result["category_scores"]
         by_h   = result.get("by_horizon") or {}
         c1m    = result.get("composite_1m")
