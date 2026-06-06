@@ -63,8 +63,19 @@ export const PREDICTION_HORIZON_LABELS: Record<PredictionHorizon, string> = {
 }
 
 export function parsePredictionHorizon(v: string | undefined | null): PredictionHorizon {
-  if (v === '1m' || v === 'fwd_return_1m') return 'fwd_return_1m'
-  return 'fwd_return_3m'
+  if (v === '3m' || v === 'fwd_return_3m') return 'fwd_return_3m'
+  return 'fwd_return_1m'
+}
+
+/**
+ * Year-months excluded from the model & backtest because they capture the
+ * COVID crash (an exogenous shock the model cannot learn from).
+ */
+export const EXCLUDED_TRAINING_MONTHS = new Set(['2020-02', '2020-03', '2020-04'])
+
+/** True if an as_of_date (YYYY-MM-DD) falls in an excluded training month. */
+export function isExcludedTrainingDate(asOfDate: string): boolean {
+  return EXCLUDED_TRAINING_MONTHS.has(asOfDate.slice(0, 7))
 }
 
 export function predictionHorizonParam(h: PredictionHorizon): string {

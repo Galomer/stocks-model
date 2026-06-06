@@ -196,7 +196,7 @@ def main():
                 "as_of_date":     as_of.date().isoformat(),
                 "sector":         sector,
                 "sector_name":    name,
-                "composite":      nan_to_none(r.get("composite_3m") if r.get("composite_3m") is not None else r["composite"]),
+                "composite":      nan_to_none(r.get("composite_1m") if r.get("composite_1m") is not None else r["composite"]),
                 "composite_1m":   nan_to_none(r.get("composite_1m")),
                 "composite_3m":   nan_to_none(r.get("composite_3m") if r.get("composite_3m") is not None else r["composite"]),
                 "momentum":       nan_to_none(cat.get("momentum")),

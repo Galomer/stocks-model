@@ -21,7 +21,7 @@ if _LW_PATH.exists():
         _LEARNED = {}
 
 PREDICTION_HORIZONS = ("fwd_return_1m", "fwd_return_3m")
-DEFAULT_PREDICTION_HORIZON = "fwd_return_3m"
+DEFAULT_PREDICTION_HORIZON = "fwd_return_1m"
 
 # Legacy top-level bundle (v2 blend) — used as fallback for 3m when by_horizon missing.
 _LEGACY_WEIGHTS: dict = _LEARNED.get("weights", {})

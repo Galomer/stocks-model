@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import type { HistoricalScore, Horizon, ReturnMode } from '@/lib/types'
-import { HORIZON_LABELS } from '@/lib/types'
+import { HORIZON_LABELS, isExcludedTrainingDate } from '@/lib/types'
 import { pairsForHorizon, bucketize, pearson, correlationBySector } from '@/lib/analysis'
 import ScatterPlot from '@/components/ScatterPlot'
 import InfoTip from '@/components/InfoTip'
@@ -10,9 +10,16 @@ import { TrendingUp, AlertTriangle, BarChart3, HelpCircle } from 'lucide-react'
 
 const HORIZONS: Horizon[] = ['fwd_return_1m', 'fwd_return_3m', 'fwd_return_6m', 'fwd_return_1y']
 
-export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
-  const [horizon, setHorizon] = useState<Horizon>('fwd_return_3m')
+export default function HistoryView({ rows: rawRows }: { rows: HistoricalScore[] }) {
+  const [horizon, setHorizon] = useState<Horizon>('fwd_return_1m')
   const [returnMode, setReturnMode] = useState<ReturnMode>('excess')
+
+  // Exclude the COVID crash months — the model is not trained on them, so the
+  // track record should not be judged on them either.
+  const rows = useMemo(
+    () => rawRows.filter((r) => !isExcludedTrainingDate(r.as_of_date)),
+    [rawRows],
+  )
 
   const pairs    = useMemo(() => pairsForHorizon(rows, horizon, returnMode), [rows, horizon, returnMode])
   const buckets  = useMemo(() => bucketize(pairs), [pairs])
@@ -405,8 +412,10 @@ export default function HistoryView({ rows }: { rows: HistoricalScore[] }) {
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
         <p>
           Important caveats: this sample runs from 2019 through today and includes several very
-          different market regimes, but it is still one historical window. Past performance does not
-          predict future performance. This is research, not investment advice.
+          different market regimes, but it is still one historical window. The COVID-crash months
+          (Feb–Apr 2020) are excluded — that was an exogenous shock the model is not built to
+          predict. Past performance does not predict future performance. This is research, not
+          investment advice.
         </p>
       </div>
     </div>

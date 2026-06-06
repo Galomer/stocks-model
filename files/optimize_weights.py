@@ -16,6 +16,7 @@ from typing import Dict, List, Tuple
 
 import requests
 
+from config import EXCLUDED_TRAINING_MONTHS
 from model_core import (
     CATEGORY_WEIGHT_CAP,
     FEATURE_CATEGORY,
@@ -23,6 +24,11 @@ from model_core import (
     apply_calibration,
     raw_composite_from_features,
 )
+
+
+def _is_excluded(as_of_date: str) -> bool:
+    """True if the observation falls in an excluded training month (e.g. COVID crash)."""
+    return as_of_date[:7] in EXCLUDED_TRAINING_MONTHS
 
 PAGE_SIZE = 1000
 EXCESS_SUFFIX = "_excess"
@@ -327,6 +333,15 @@ def main():
     rows = fetch_all_history(url, key)
     rows = [r for r in rows if r.get("features")]
     print(f"  {len(rows)} rows with features")
+
+    # Drop excluded training periods (e.g. COVID crash) — exogenous shocks the
+    # model cannot learn from and which distort the learned weights.
+    before = len(rows)
+    rows = [r for r in rows if not _is_excluded(r["as_of_date"])]
+    dropped = before - len(rows)
+    if dropped:
+        print(f"  dropped {dropped} rows in excluded months {sorted(EXCLUDED_TRAINING_MONTHS)}")
+
     if rows:
         print(f"  date range: {rows[0]['as_of_date']} → {rows[-1]['as_of_date']}")
 
@@ -336,13 +351,13 @@ def main():
     for horizon in PREDICTION_HORIZONS:
         by_horizon[horizon] = optimize_horizon(rows, horizon, feature_names)
 
-    default = by_horizon["fwd_return_3m"]
+    default = by_horizon["fwd_return_1m"]
 
     out = {
         "version": 3,
         "target": "cross_sectional_excess_per_horizon",
         "prediction_horizons": list(PREDICTION_HORIZONS),
-        "default_horizon": "fwd_return_3m",
+        "default_horizon": "fwd_return_1m",
         "noise_floor": NOISE_FLOOR,
         "min_weight": MIN_WEIGHT,
         "max_weight": MAX_WEIGHT,

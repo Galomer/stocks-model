@@ -73,6 +73,13 @@ LOOKBACK_DAYS    = 760   # Calendar days to pull (~3 years; more = better z-scor
 ZSCORE_WINDOW    = 252   # Rolling window for z-score normalization (1 trading year)
 PERCENTILE_WINDOW = 252  # Rolling window for percentile normalization
 
+# ── Excluded training periods ───────────────────────────────────────────────
+# The COVID crash (started March 2020) was an exogenous shock that the model
+# cannot learn from — including it distorts the learned weights. Observations
+# whose as_of_date falls in these year-months are dropped from weight learning
+# (and from the track-record backtest) but remain in the raw historical table.
+EXCLUDED_TRAINING_MONTHS = {"2020-02", "2020-03", "2020-04"}
+
 # ── Feature weights ───────────────────────────────────────────────────────
 # Start equal. After you've built a validation set, fit these via logistic regression.
 # Setting a weight to 0 disables that feature without touching code.

@@ -162,7 +162,7 @@ def main():
             "run_date":    run_date,
             "sector":      sector,
             "sector_name": sector_name,
-            "composite":   nan_to_none(c3m if c3m is not None else result["composite"]),
+            "composite":   nan_to_none(c1m if c1m is not None else result["composite"]),
             "composite_1m": nan_to_none(c1m),
             "composite_3m": nan_to_none(c3m),
             "momentum":    nan_to_none(cat.get("momentum")),
