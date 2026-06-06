@@ -1,13 +1,65 @@
 @import "tailwindcss";
 
+/*
+ * Warm theme — the app keeps its focused, low-distraction layout but the cold
+ * near-black/zinc palette is remapped to a softer, warmer "espresso & sand"
+ * scale. Because every component already uses `zinc-*`, `gray-*` and `white/*`
+ * utilities, remapping those design tokens here recolors the whole UI at once.
+ */
+@theme {
+  /* Warm neutral scale (replaces cold zinc) */
+  --color-zinc-50:  #f8f3ec;
+  --color-zinc-100: #f0e7da;
+  --color-zinc-200: #e4d8c9;
+  --color-zinc-300: #cdbdad;
+  --color-zinc-400: #ab9885;
+  --color-zinc-500: #8c7b6c;
+  --color-zinc-600: #5d4d40;
+  --color-zinc-700: #41342a;
+  --color-zinc-800: #2f251d;
+  --color-zinc-900: #241c15;
+  --color-zinc-950: #1b1510;
+
+  /* Mirror the warm scale onto `gray` (a few components use gray-*) */
+  --color-gray-50:  #f8f3ec;
+  --color-gray-100: #f0e7da;
+  --color-gray-200: #e4d8c9;
+  --color-gray-300: #cdbdad;
+  --color-gray-400: #ab9885;
+  --color-gray-500: #8c7b6c;
+  --color-gray-600: #5d4d40;
+  --color-gray-700: #41342a;
+  --color-gray-800: #2f251d;
+  --color-gray-900: #241c15;
+  --color-gray-950: #1b1510;
+
+  /* Soften pure white → warm ivory. Warms all text-white and white/x overlays. */
+  --color-white: #f5efe6;
+
+  /* Warm honey accent for brand / focus moments */
+  --color-accent: #e0a96b;
+
+  --font-display: var(--font-display-serif), Georgia, "Times New Roman", serif;
+}
+
 :root {
-  --background: #09090b;
-  --foreground: #fafafa;
+  --background: #1b1510;
+  --foreground: #ece3d8;
 }
 
 body {
   background: var(--background);
+  /* Subtle warm glow from the top so the dark surface feels lit, not flat black */
+  background-image:
+    radial-gradient(1200px 600px at 50% -10%, rgba(224, 169, 107, 0.06), transparent 70%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Hero titles get a warm serif for an editorial, less clinical feel */
+h1 {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
 }

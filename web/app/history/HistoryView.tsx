@@ -75,8 +75,8 @@ export default function HistoryView({ rows: rawRows }: { rows: HistoricalScore[]
       <Header />
 
       {/* How to read */}
-      <div className="rounded-xl border border-blue-500/10 bg-blue-500/[0.04] p-5 flex gap-3 text-sm text-zinc-300">
-        <HelpCircle className="w-5 h-5 shrink-0 mt-0.5 text-blue-400" />
+      <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.05] p-5 flex gap-3 text-sm text-zinc-300">
+        <HelpCircle className="w-5 h-5 shrink-0 mt-0.5 text-accent" />
         <div className="space-y-2">
           <p className="font-medium text-white">How to read this page</p>
           <p>

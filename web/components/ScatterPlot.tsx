@@ -106,21 +106,21 @@ export default function ScatterPlot({ pairs, horizonLabel }: ScatterPlotProps) {
 
           {/* Tick labels */}
           {[xMin, -50, 0, 50, xMax].map((v) => (
-            <text key={v} x={xScale(v)} y={height - padding + 18} fontSize="10" fill="#71717a" textAnchor="middle">
+            <text key={v} x={xScale(v)} y={height - padding + 18} fontSize="10" fill="#8c7b6c" textAnchor="middle">
               {v > 0 ? `+${v}` : v}
             </text>
           ))}
           {[yMin, yMin / 2, 0, yMax / 2, yMax].map((v, i) => (
-            <text key={i} x={padding - 6} y={yScale(v) + 3} fontSize="10" fill="#71717a" textAnchor="end">
+            <text key={i} x={padding - 6} y={yScale(v) + 3} fontSize="10" fill="#8c7b6c" textAnchor="end">
               {(v * 100).toFixed(0)}%
             </text>
           ))}
 
           {/* Axis titles */}
-          <text x={width / 2} y={height - 4} fontSize="11" fill="#a1a1aa" textAnchor="middle">
+          <text x={width / 2} y={height - 4} fontSize="11" fill="#ab9885" textAnchor="middle">
             Composite Score
           </text>
-          <text x={12} y={height / 2} fontSize="11" fill="#a1a1aa" textAnchor="middle"
+          <text x={12} y={height / 2} fontSize="11" fill="#ab9885" textAnchor="middle"
                 transform={`rotate(-90, 12, ${height / 2})`}>
             Forward Return ({horizonLabel})
           </text>
