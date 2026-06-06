@@ -2,7 +2,7 @@
 
 interface ScoreBarProps {
   score: number | null
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   showValue?: boolean
 }
 
@@ -10,7 +10,7 @@ export default function ScoreBar({ score, size = 'md', showValue = false }: Scor
   const isNull = score === null || score === undefined || isNaN(score)
   const clamped = isNull ? 0 : Math.max(-100, Math.min(100, score))
 
-  const trackH = size === 'sm' ? 'h-1.5' : size === 'lg' ? 'h-3' : 'h-2'
+  const trackH = size === 'xs' ? 'h-1' : size === 'sm' ? 'h-1.5' : size === 'lg' ? 'h-3' : 'h-2'
 
   const fillColor = isNull
     ? 'bg-gray-600'

@@ -41,3 +41,11 @@ jobs:
         run: |
           cd files
           python save_to_supabase.py
+
+      - name: Score individual stocks → Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          cd files
+          python save_stocks_to_supabase.py

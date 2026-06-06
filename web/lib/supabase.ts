@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { SectorScore, HistoricalScore } from './types'
+import type { SectorScore, HistoricalScore, StockScore } from './types'
 
 const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -103,6 +103,52 @@ export async function getHistoricalScores(sector: string, limit = 90): Promise<S
     .order('run_date', { ascending: false })
     .limit(limit)
   return ((data ?? []) as Record<string, unknown>[]).map(normalizeSectorScore).reverse()
+}
+
+function normalizeStockScore(row: Record<string, unknown>): StockScore {
+  const base = row as unknown as StockScore
+  return {
+    ...base,
+    momentum_1m: toNum(row.momentum_1m),
+    momentum_3m: toNum(row.momentum_3m),
+    rank_in_sector_1m: row.rank_in_sector_1m != null ? Number(row.rank_in_sector_1m) : null,
+    rank_in_sector_3m: row.rank_in_sector_3m != null ? Number(row.rank_in_sector_3m) : null,
+    available: row.available != null ? Number(row.available) : null,
+    coverage: toNum(row.coverage),
+  }
+}
+
+export async function getStockScoresForSector(
+  sector: string,
+  runDate?: string,
+): Promise<StockScore[]> {
+  let date = runDate
+  if (!date) {
+    date = await getLatestRunDate() ?? undefined
+    if (!date) return []
+  }
+  const { data } = await supabase
+    .from('stock_scores')
+    .select('*')
+    .eq('run_date', date)
+    .eq('sector', sector)
+    .order('rank_in_sector_3m', { ascending: true, nullsFirst: false })
+  return ((data ?? []) as Record<string, unknown>[]).map(normalizeStockScore)
+}
+
+export async function getAllStockScores(runDate?: string): Promise<StockScore[]> {
+  let date = runDate
+  if (!date) {
+    date = await getLatestRunDate() ?? undefined
+    if (!date) return []
+  }
+  const { data } = await supabase
+    .from('stock_scores')
+    .select('run_date, ticker, name, sector, sector_name, momentum_1m, momentum_3m, rank_in_sector_1m, rank_in_sector_3m, available, coverage')
+    .eq('run_date', date)
+    .order('sector', { ascending: true })
+    .order('rank_in_sector_3m', { ascending: true, nullsFirst: false })
+  return ((data ?? []) as Record<string, unknown>[]).map(normalizeStockScore)
 }
 
 export async function getAllHistoricalScores(): Promise<HistoricalScore[]> {

@@ -1,4 +1,4 @@
-import { getSectorScore, getHistoricalScores, getLatestRunDate } from '@/lib/supabase'
+import { getSectorScore, getHistoricalScores, getLatestRunDate, getStockScoresForSector } from '@/lib/supabase'
 import {
   directionLabel,
   directionBg,
@@ -51,10 +51,11 @@ export default async function SectorPage({ params, searchParams }: Props) {
 
   if (!SECTOR_DESCRIPTIONS[sector]) notFound()
 
-  const [score, history, latestDate] = await Promise.all([
+  const [score, history, latestDate, stockScores] = await Promise.all([
     getSectorScore(sector),
     getHistoricalScores(sector, 60),
     getLatestRunDate(),
+    getStockScoresForSector(sector),
   ])
 
   if (!score) {
@@ -193,27 +194,33 @@ export default async function SectorPage({ params, searchParams }: Props) {
       )}
 
       {/* Top 20 holdings */}
-      {SECTOR_HOLDINGS[sector] && (
+      {(stockScores.length > 0 || SECTOR_HOLDINGS[sector]) && (
         <div className="rounded-xl border border-white/5 bg-white/[0.02] p-6 space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="text-sm font-semibold text-zinc-300 inline-flex items-center gap-1.5">
               <Briefcase className="w-4 h-4 text-zinc-500" />
-              Top 20 Holdings
+              Top 20 Holdings — Momentum Ranking
               <InfoTip
-                what={`The 20 largest companies inside the ${sector} ETF by index weight.`}
-                why="The score is for the sector as a whole, but the ETF is essentially these 20 names plus a long tail. They drive most of the day-to-day moves."
+                what={`Each holding is scored on its own momentum signals (moving averages, rate of change, RSI, relative strength vs SPY and vs the ${sector} ETF). Ranked within the sector — #1 has the strongest momentum.`}
+                why="The sector score is for the ETF as a whole. This view shows which individual names inside the sector are currently leading or lagging on price momentum."
                 align="start"
               />
             </h2>
             <span className="text-xs text-zinc-600">
-              Ordered by approximate index weight
+              {stockScores.length > 0
+                ? `Ranked by ${predHorizon === 'fwd_return_1m' ? '1-month' : '3-month'} momentum`
+                : 'Ordered by approximate index weight'}
             </span>
           </div>
-          <SectorHoldings sector={sector} />
+          <SectorHoldings
+            sector={sector}
+            stockScores={stockScores.length > 0 ? stockScores : null}
+            horizon={predHorizon}
+          />
           <p className="text-xs text-zinc-600 pt-2 border-t border-white/5">
             Holdings are illustrative and based on the SPDR sector ETF&rsquo;s most recent
-            published top constituents. Exact weights shift week to week as prices and
-            shares outstanding change.
+            published top constituents. Momentum scores are based on price signals only —
+            they do not incorporate fundamentals.
           </p>
         </div>
       )}

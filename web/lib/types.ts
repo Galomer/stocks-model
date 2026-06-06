@@ -122,6 +122,38 @@ export type FeatureDetail = {
   category: string
 }
 
+export type StockScore = {
+  id: number
+  run_date: string
+  ticker: string
+  name: string
+  sector: string
+  sector_name: string
+  momentum_1m: number | null
+  momentum_3m: number | null
+  rank_in_sector_1m: number | null
+  rank_in_sector_3m: number | null
+  available: number | null
+  coverage: number | null
+  features: Record<string, number | null> | null
+  created_at: string
+}
+
+export function stockScoreForHorizon(
+  row: Pick<StockScore, 'momentum_1m' | 'momentum_3m'>,
+  horizon: PredictionHorizon,
+): number | null {
+  const v = horizon === 'fwd_return_1m' ? row.momentum_1m : row.momentum_3m
+  return v !== null && v !== undefined && !isNaN(v as number) ? Number(v) : null
+}
+
+export function stockRankForHorizon(
+  row: Pick<StockScore, 'rank_in_sector_1m' | 'rank_in_sector_3m'>,
+  horizon: PredictionHorizon,
+): number | null {
+  return horizon === 'fwd_return_1m' ? row.rank_in_sector_1m : row.rank_in_sector_3m
+}
+
 export type CategoryKey = 'momentum' | 'macro' | 'sentiment' | 'regime'
 
 export const CATEGORY_ORDER: CategoryKey[] = ['momentum', 'macro', 'sentiment', 'regime']
