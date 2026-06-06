@@ -96,31 +96,31 @@ export default function ScatterPlot({ pairs, horizonLabel }: ScatterPlotProps) {
           />
 
           {/* Axes through 0 */}
-          <line x1={xScale(xMin)} x2={xScale(xMax)} y1={yScale(0)} y2={yScale(0)} stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-          <line x1={xScale(0)} x2={xScale(0)} y1={yScale(yMin)} y2={yScale(yMax)} stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+          <line x1={xScale(xMin)} x2={xScale(xMax)} y1={yScale(0)} y2={yScale(0)} stroke="rgba(44,34,24,0.30)" strokeWidth="1" />
+          <line x1={xScale(0)} x2={xScale(0)} y1={yScale(yMin)} y2={yScale(yMax)} stroke="rgba(44,34,24,0.30)" strokeWidth="1" />
 
           {/* Grid */}
           {[-50, 50].map((v) => (
-            <line key={v} x1={xScale(v)} x2={xScale(v)} y1={yScale(yMin)} y2={yScale(yMax)} stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+            <line key={v} x1={xScale(v)} x2={xScale(v)} y1={yScale(yMin)} y2={yScale(yMax)} stroke="rgba(44,34,24,0.10)" strokeDasharray="3 3" />
           ))}
 
           {/* Tick labels */}
           {[xMin, -50, 0, 50, xMax].map((v) => (
-            <text key={v} x={xScale(v)} y={height - padding + 18} fontSize="10" fill="#8c7b6c" textAnchor="middle">
+            <text key={v} x={xScale(v)} y={height - padding + 18} fontSize="10" fill="#6b5a47" textAnchor="middle">
               {v > 0 ? `+${v}` : v}
             </text>
           ))}
           {[yMin, yMin / 2, 0, yMax / 2, yMax].map((v, i) => (
-            <text key={i} x={padding - 6} y={yScale(v) + 3} fontSize="10" fill="#8c7b6c" textAnchor="end">
+            <text key={i} x={padding - 6} y={yScale(v) + 3} fontSize="10" fill="#6b5a47" textAnchor="end">
               {(v * 100).toFixed(0)}%
             </text>
           ))}
 
           {/* Axis titles */}
-          <text x={width / 2} y={height - 4} fontSize="11" fill="#ab9885" textAnchor="middle">
+          <text x={width / 2} y={height - 4} fontSize="11" fill="#574836" textAnchor="middle">
             Composite Score
           </text>
-          <text x={12} y={height / 2} fontSize="11" fill="#ab9885" textAnchor="middle"
+          <text x={12} y={height / 2} fontSize="11" fill="#574836" textAnchor="middle"
                 transform={`rotate(-90, 12, ${height / 2})`}>
             Forward Return ({horizonLabel})
           </text>
@@ -135,8 +135,8 @@ export default function ScatterPlot({ pairs, horizonLabel }: ScatterPlotProps) {
                 cy={yScale(p.ret)}
                 r={hover === p ? 4.5 : pinnedSector ? 3 : 2.4}
                 fill={SECTOR_COLORS[p.sector] ?? '#9ca3af'}
-                fillOpacity={dim ? 0.05 : pinnedSector ? 0.85 : 0.6}
-                stroke={hover === p ? '#fff' : 'none'}
+                fillOpacity={dim ? 0.08 : pinnedSector ? 0.9 : 0.72}
+                stroke={hover === p ? '#2c2218' : 'none'}
                 strokeWidth={hover === p ? 1.5 : 0}
                 onMouseEnter={() => setHover(p)}
                 style={{ cursor: 'pointer', transition: 'r 100ms' }}
@@ -146,7 +146,7 @@ export default function ScatterPlot({ pairs, horizonLabel }: ScatterPlotProps) {
         </svg>
 
         {hover && (
-          <div className="absolute top-2 right-2 bg-zinc-900 border border-white/10 rounded-md px-3 py-2 text-xs space-y-0.5 pointer-events-none">
+          <div className="absolute top-2 right-2 bg-zinc-900 border border-white/10 rounded-md shadow-lg px-3 py-2 text-xs space-y-0.5 pointer-events-none">
             <div className="font-mono font-semibold" style={{ color: SECTOR_COLORS[hover.sector] ?? 'white' }}>
               {hover.sector}
             </div>

@@ -1,57 +1,63 @@
 @import "tailwindcss";
 
 /*
- * Warm theme — the app keeps its focused, low-distraction layout but the cold
- * near-black/zinc palette is remapped to a softer, warmer "espresso & sand"
- * scale. Because every component already uses `zinc-*`, `gray-*` and `white/*`
- * utilities, remapping those design tokens here recolors the whole UI at once.
+ * Warm LIGHT theme — soft "paper & sand" background with warm espresso ink.
+ *
+ * The app was built with dark-surface utilities (bg-zinc-950 body, light
+ * text-zinc-100/200/white, and white/x overlays for subtle lift). To flip the
+ * whole UI to a warm light theme in one place we:
+ *   1. Invert the neutral scale (zinc/gray): 950 = lightest paper, 50 = darkest
+ *      ink. This keeps every existing contrast relationship intact — a dark-bg
+ *      / light-text pairing becomes a light-bg / dark-text pairing.
+ *   2. Remap `white` → warm espresso, so text-white turns into dark ink and the
+ *      white/x overlays + borders become subtle dark tints on the light surface.
  */
 @theme {
-  /* Warm neutral scale (replaces cold zinc) */
-  --color-zinc-50:  #f8f3ec;
-  --color-zinc-100: #f0e7da;
-  --color-zinc-200: #e4d8c9;
-  --color-zinc-300: #cdbdad;
-  --color-zinc-400: #ab9885;
-  --color-zinc-500: #8c7b6c;
-  --color-zinc-600: #5d4d40;
-  --color-zinc-700: #41342a;
-  --color-zinc-800: #2f251d;
-  --color-zinc-900: #241c15;
-  --color-zinc-950: #1b1510;
+  /* Warm neutral scale, inverted for a light surface (950 = paper, 50 = ink) */
+  --color-zinc-950: #f6f0e6;
+  --color-zinc-900: #efe7d9;
+  --color-zinc-800: #e6dac8;
+  --color-zinc-700: #d5c6b0;
+  --color-zinc-600: #b6a48b;
+  --color-zinc-500: #8f7d68;
+  --color-zinc-400: #6b5a47;
+  --color-zinc-300: #574836;
+  --color-zinc-200: #433627;
+  --color-zinc-100: #33281d;
+  --color-zinc-50:  #251c13;
 
-  /* Mirror the warm scale onto `gray` (a few components use gray-*) */
-  --color-gray-50:  #f8f3ec;
-  --color-gray-100: #f0e7da;
-  --color-gray-200: #e4d8c9;
-  --color-gray-300: #cdbdad;
-  --color-gray-400: #ab9885;
-  --color-gray-500: #8c7b6c;
-  --color-gray-600: #5d4d40;
-  --color-gray-700: #41342a;
-  --color-gray-800: #2f251d;
-  --color-gray-900: #241c15;
-  --color-gray-950: #1b1510;
+  --color-gray-950: #f6f0e6;
+  --color-gray-900: #efe7d9;
+  --color-gray-800: #e6dac8;
+  --color-gray-700: #d5c6b0;
+  --color-gray-600: #b6a48b;
+  --color-gray-500: #8f7d68;
+  --color-gray-400: #6b5a47;
+  --color-gray-300: #574836;
+  --color-gray-200: #433627;
+  --color-gray-100: #33281d;
+  --color-gray-50:  #251c13;
 
-  /* Soften pure white → warm ivory. Warms all text-white and white/x overlays. */
-  --color-white: #f5efe6;
+  /* `white` → warm espresso: flips text-white to ink and white/x overlays to
+     subtle warm tints/borders on the light surface. */
+  --color-white: #2c2218;
 
-  /* Warm honey accent for brand / focus moments */
-  --color-accent: #e0a96b;
+  /* Warm caramel accent for brand / focus moments (reads on the cream surface) */
+  --color-accent: #bf7327;
 
   --font-display: var(--font-display-serif), Georgia, "Times New Roman", serif;
 }
 
 :root {
-  --background: #1b1510;
-  --foreground: #ece3d8;
+  --background: #f6f0e6;
+  --foreground: #33281d;
 }
 
 body {
   background: var(--background);
-  /* Subtle warm glow from the top so the dark surface feels lit, not flat black */
+  /* Soft warm light from the top so the paper feels lit and inviting */
   background-image:
-    radial-gradient(1200px 600px at 50% -10%, rgba(224, 169, 107, 0.06), transparent 70%);
+    radial-gradient(1100px 560px at 50% -12%, rgba(191, 115, 39, 0.10), transparent 70%);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;

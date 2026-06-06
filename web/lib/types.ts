@@ -200,19 +200,19 @@ export function directionLabel(score: number | null): string {
 }
 
 export function directionColor(score: number | null): string {
-  if (score === null || isNaN(score)) return 'text-gray-400'
-  if (score >= 60)  return 'text-emerald-400'
-  if (score >= 25)  return 'text-green-400'
-  if (score >= -25) return 'text-yellow-400'
-  if (score >= -60) return 'text-orange-400'
-  return 'text-red-400'
+  if (score === null || isNaN(score)) return 'text-zinc-500'
+  if (score >= 60)  return 'text-emerald-700'
+  if (score >= 25)  return 'text-green-700'
+  if (score >= -25) return 'text-yellow-700'
+  if (score >= -60) return 'text-orange-700'
+  return 'text-red-700'
 }
 
 export function directionBg(score: number | null): string {
-  if (score === null || isNaN(score)) return 'bg-gray-500/10 text-gray-400'
-  if (score >= 60)  return 'bg-emerald-500/10 text-emerald-400'
-  if (score >= 25)  return 'bg-green-500/10 text-green-400'
-  if (score >= -25) return 'bg-yellow-500/10 text-yellow-400'
-  if (score >= -60) return 'bg-orange-500/10 text-orange-400'
-  return 'bg-red-500/10 text-red-400'
+  if (score === null || isNaN(score)) return 'bg-zinc-500/10 text-zinc-500'
+  if (score >= 60)  return 'bg-emerald-500/15 text-emerald-700'
+  if (score >= 25)  return 'bg-green-500/15 text-green-700'
+  if (score >= -25) return 'bg-yellow-500/20 text-yellow-700'
+  if (score >= -60) return 'bg-orange-500/15 text-orange-700'
+  return 'bg-red-500/15 text-red-700'
 }

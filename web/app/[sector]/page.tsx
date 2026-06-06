@@ -261,7 +261,7 @@ function Sparkline({ data }: { data: (number | null)[] }) {
     .join(' ')
 
   const last = valid[valid.length - 1]
-  const color = last >= 25 ? '#34d399' : last >= -25 ? '#facc15' : '#f87171'
+  const color = last >= 25 ? '#15803d' : last >= -25 ? '#a16207' : '#dc2626'
 
   return (
     <svg
@@ -284,7 +284,7 @@ function Sparkline({ data }: { data: (number | null)[] }) {
           y1={H - ((0 - min) / range) * H}
           x2={W}
           y2={H - ((0 - min) / range) * H}
-          stroke="rgba(255,255,255,0.1)"
+          stroke="rgba(44,34,24,0.15)"
           strokeWidth="1"
           strokeDasharray="4 4"
         />

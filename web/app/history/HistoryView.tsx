@@ -75,7 +75,7 @@ export default function HistoryView({ rows: rawRows }: { rows: HistoricalScore[]
       <Header />
 
       {/* How to read */}
-      <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.05] p-5 flex gap-3 text-sm text-zinc-300">
+      <div className="rounded-xl border border-amber-600/20 bg-amber-500/[0.10] p-5 flex gap-3 text-sm text-zinc-300">
         <HelpCircle className="w-5 h-5 shrink-0 mt-0.5 text-accent" />
         <div className="space-y-2">
           <p className="font-medium text-white">How to read this page</p>
@@ -270,8 +270,8 @@ export default function HistoryView({ rows: rawRows }: { rows: HistoricalScore[]
             <tbody>
               {buckets.map((b) => {
                 const color =
-                  b.meanReturn > 0.005  ? 'text-green-400'  :
-                  b.meanReturn < -0.005 ? 'text-red-400'    :
+                  b.meanReturn > 0.005  ? 'text-green-700'  :
+                  b.meanReturn < -0.005 ? 'text-red-700'    :
                                           'text-zinc-300'
                 return (
                   <tr key={b.label} className="border-t border-white/5">
@@ -365,8 +365,8 @@ export default function HistoryView({ rows: rawRows }: { rows: HistoricalScore[]
               {bySector.map((row) => {
                 const c = row.corr
                 const r2 = row.r2
-                const color = c > 0.1 ? 'text-green-400' : c < -0.1 ? 'text-red-400' : 'text-zinc-300'
-                const r2Color = r2 >= 0.04 ? 'text-green-400' : r2 >= 0.01 ? 'text-zinc-300' : 'text-zinc-500'
+                const color = c > 0.1 ? 'text-green-700' : c < -0.1 ? 'text-red-700' : 'text-zinc-300'
+                const r2Color = r2 >= 0.04 ? 'text-green-700' : r2 >= 0.01 ? 'text-zinc-300' : 'text-zinc-500'
                 const barWidth = Math.max(2, Math.abs(c) * 200)
                 const verdict =
                   c >  0.2  ? 'Worked well'      :
@@ -391,7 +391,7 @@ export default function HistoryView({ rows: rawRows }: { rows: HistoricalScore[]
                       <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/30" />
                         <div
-                          className={`absolute top-0 bottom-0 ${c >= 0 ? 'bg-green-400' : 'bg-red-400'} rounded-sm`}
+                          className={`absolute top-0 bottom-0 ${c >= 0 ? 'bg-green-600' : 'bg-red-600'} rounded-sm`}
                           style={{
                             left: c >= 0 ? '50%' : `calc(50% - ${barWidth}px)`,
                             width: `${barWidth}px`,
@@ -408,7 +408,7 @@ export default function HistoryView({ rows: rawRows }: { rows: HistoricalScore[]
       </div>
 
       {/* Disclaimer */}
-      <div className="rounded-lg bg-amber-500/5 border border-amber-500/10 p-4 flex gap-3 text-sm text-amber-400/80">
+      <div className="rounded-lg bg-amber-500/10 border border-amber-600/20 p-4 flex gap-3 text-sm text-amber-800">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
         <p>
           Important caveats: this sample runs from 2019 through today and includes several very
@@ -460,7 +460,7 @@ function PlainStat({
   color: 'green' | 'red' | 'gray'
   info?: { what: string; why?: string }
 }) {
-  const valueColor = color === 'green' ? 'text-green-400' : color === 'red' ? 'text-red-400' : 'text-zinc-200'
+  const valueColor = color === 'green' ? 'text-green-700' : color === 'red' ? 'text-red-700' : 'text-zinc-200'
   return (
     <div className="rounded-lg border border-white/5 bg-white/[0.02] p-5 space-y-1.5">
       <p className="text-xs text-zinc-500 uppercase tracking-wider inline-flex items-center gap-1.5">

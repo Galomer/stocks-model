@@ -13,16 +13,16 @@ export default function ScoreBar({ score, size = 'md', showValue = false }: Scor
   const trackH = size === 'xs' ? 'h-1' : size === 'sm' ? 'h-1.5' : size === 'lg' ? 'h-3' : 'h-2'
 
   const fillColor = isNull
-    ? 'bg-gray-600'
+    ? 'bg-zinc-600'
     : clamped >= 60
-    ? 'bg-emerald-400'
+    ? 'bg-emerald-600'
     : clamped >= 25
-    ? 'bg-green-400'
+    ? 'bg-green-600'
     : clamped >= -25
-    ? 'bg-yellow-400'
+    ? 'bg-yellow-500'
     : clamped >= -60
-    ? 'bg-orange-400'
-    : 'bg-red-400'
+    ? 'bg-orange-500'
+    : 'bg-red-500'
 
   const leftPct  = clamped >= 0 ? 50 : 50 + clamped / 2
   const widthPct = Math.abs(clamped) / 2

@@ -172,7 +172,7 @@ export default async function HomePage({ searchParams }: Props) {
       )}
 
       {/* Disclaimer */}
-      <div className="rounded-lg bg-amber-500/5 border border-amber-500/10 p-4 flex gap-3 text-sm text-amber-400/80">
+      <div className="rounded-lg bg-amber-500/10 border border-amber-600/20 p-4 flex gap-3 text-sm text-amber-800">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
         <p>
           Research model only. Scores are based on quantitative signals and do not constitute
