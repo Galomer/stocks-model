@@ -48,6 +48,17 @@ export default async function HomePage({ searchParams }: Props) {
 
   return (
     <div className="space-y-8">
+      {/* Top disclaimer banner */}
+      <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 flex gap-3 items-start">
+        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+        <p className="text-xs text-amber-200 leading-relaxed">
+          <span className="font-semibold text-amber-300">Not investment advice.</span>{' '}
+          This is a personal research model. I am not a licensed investment advisor under Israeli law
+          (Investment Advice Law, 5755-1995). Nothing here is a recommendation to buy or sell any
+          security. Consult a licensed professional before investing.
+        </p>
+      </div>
+
       {/* Hero */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-zinc-500 text-sm">
@@ -171,16 +182,6 @@ export default async function HomePage({ searchParams }: Props) {
         </>
       )}
 
-      {/* Disclaimer */}
-      <div className="rounded-lg bg-amber-500/10 border border-amber-600/20 p-4 flex gap-3 text-sm text-amber-200/90">
-        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
-        <p>
-          Research model only. Scores are based on quantitative signals and do not constitute investment advice.
-          I am not a certified or licensed financial advisor, broker, or investment consultant, and nothing here is a
-          recommendation to buy or sell any security. Always do your own research, validate outputs on a holdout period,
-          and consult a qualified professional before acting.
-        </p>
-      </div>
     </div>
   )
 }

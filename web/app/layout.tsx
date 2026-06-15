@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Fraunces } from 'next/font/google'
 import './globals.css'
 import NavTabs from '@/components/NavTabs'
+import DisclaimerModal from '@/components/DisclaimerModal'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </a>
           </div>
         </header>
+        <DisclaimerModal />
         <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">{children}</main>
         <footer className="border-t border-white/5 mt-16">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 text-xs text-zinc-400 space-y-1">
