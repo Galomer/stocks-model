@@ -47,8 +47,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">{children}</main>
         <footer className="border-t border-white/5 mt-16">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 text-xs text-zinc-600">
-            Research model only — not investment advice. Validate on a holdout period before acting on any output.
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 text-xs text-zinc-400 space-y-1">
+            <p>
+              Research model only — not investment advice. Validate on a holdout period before acting on any output.
+            </p>
+            <p>
+              I am not a certified or licensed financial advisor, broker, or investment consultant. Nothing here is a
+              recommendation to buy or sell any security. This is a personal research project provided &ldquo;as is&rdquo;
+              with no guarantees of accuracy. Do your own research and consult a qualified professional before investing.
+            </p>
           </div>
         </footer>
       </body>

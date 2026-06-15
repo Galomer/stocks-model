@@ -172,11 +172,13 @@ export default async function HomePage({ searchParams }: Props) {
       )}
 
       {/* Disclaimer */}
-      <div className="rounded-lg bg-amber-500/10 border border-amber-600/20 p-4 flex gap-3 text-sm text-amber-800">
-        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+      <div className="rounded-lg bg-amber-500/10 border border-amber-600/20 p-4 flex gap-3 text-sm text-amber-200/90">
+        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
         <p>
-          Research model only. Scores are based on quantitative signals and do not constitute
-          investment advice. Always validate outputs on a holdout period before acting.
+          Research model only. Scores are based on quantitative signals and do not constitute investment advice.
+          I am not a certified or licensed financial advisor, broker, or investment consultant, and nothing here is a
+          recommendation to buy or sell any security. Always do your own research, validate outputs on a holdout period,
+          and consult a qualified professional before acting.
         </p>
       </div>
     </div>
